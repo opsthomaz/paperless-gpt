@@ -46,7 +46,6 @@ func loadSettings() {
 	loadDefaultSettings := func() {
 		settings = Settings{
 			CustomFieldsEnable:      os.Getenv("ENABLE_AUTO_CUSTOM_FIELDS") == "true",
-			CustomFieldsEnable:      os.Getenv("ENABLE_AUTO_CUSTOM_FIELDS") == "true",
 			CustomFieldsSelectedIDs: []int{},
 			CustomFieldsWriteMode:   "append",
 			TagsAutoCreate:          false, // Adicionado aqui
