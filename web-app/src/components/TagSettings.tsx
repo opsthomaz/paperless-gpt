@@ -8,66 +8,98 @@ interface SettingsData {
   tags_auto_create: boolean;
 }
 
+// Valores padrão seguros
+const defaultSettings: SettingsData = {
+  custom_fields_enable: false,
+  custom_fields_selected_ids: [],
+  custom_fields_write_mode: 'append',
+  tags_auto_create: false,
+};
+
 export default function TagSettings() {
-  const [settings, setSettings] = useState<SettingsData>({
-    custom_fields_enable: false,
-    custom_fields_selected_ids: [],
-    custom_fields_write_mode: 'append',
-    tags_auto_create: false,
-  });
-  const [initialSettings, setInitialSettings] = useState<SettingsData>(settings);
+  const [settings, setSettings] = useState<SettingsData>(defaultSettings);
+  const [initialSettings, setInitialSettings] = useState<SettingsData>(defaultSettings);
+
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
 
-  // Fetch settings on mount
+  // Normaliza dados vindos da API, garantindo que nunca sejam undefined
+  const normalizeSettings = (raw: Partial<SettingsData> = {}): SettingsData => ({
+    custom_fields_enable: raw.custom_fields_enable ?? false,
+    custom_fields_selected_ids: raw.custom_fields_selected_ids ?? [],
+    custom_fields_write_mode: raw.custom_fields_write_mode ?? 'append',
+    tags_auto_create: raw.tags_auto_create ?? false,
+  });
+
+  // Carrega settings ao iniciar
   useEffect(() => {
     const fetchSettings = async () => {
       try {
         const response = await axios.get('./api/settings');
-        const raw = response.data.settings as SettingsData;
-        const normalized: SettingsData = {
-          custom_fields_enable: raw.custom_fields_enable ?? false,
-          custom_fields_selected_ids: raw.custom_fields_selected_ids ?? [],
-          custom_fields_write_mode: raw.custom_fields_write_mode || 'append',
-          tags_auto_create: raw.tags_auto_create ?? false,
-        };
+
+        const raw =
+          (response.data?.settings ??
+            response.data ??
+            {}) as Partial<SettingsData>;
+
+        const normalized = normalizeSettings(raw);
+
         setSettings(normalized);
         setInitialSettings(normalized);
-        setLoading(false);
       } catch (err) {
         console.error('Error fetching settings:', err);
         setError('Failed to load settings');
+      } finally {
         setLoading(false);
       }
     };
+
     fetchSettings();
   }, []);
 
-  // Check if settings have changed
-  const hasChanges = JSON.stringify(settings) !== JSON.stringify(initialSettings);
+  // Detecta mudanças para habilitar/desabilitar o botão de salvar
+  const hasChanges =
+    JSON.stringify(settings) !== JSON.stringify(initialSettings);
 
-  // Save settings
+  // Salvar settings
   const handleSave = async () => {
     setSaving(true);
     setMessage('');
     setError('');
 
     try {
-      const response = await axios.post('./api/settings', {
-        tags_auto_create: settings.tags_auto_create
-      });
-      setMessage('Settings saved successfully');
-      const raw = response.data.settings as SettingsData;
-      const normalized: SettingsData = {
-        custom_fields_enable: raw.custom_fields_enable ?? false,
-        custom_fields_selected_ids: raw.custom_fields_selected_ids ?? [],
-        custom_fields_write_mode: raw.custom_fields_write_mode || 'append',
-        tags_auto_create: raw.tags_auto_create ?? false,
+      // 1. Pega os settings mais atuais do servidor para não sobrescrever outros módulos (ex: Custom Fields)
+      const latestRes = await axios.get('./api/settings');
+
+      const latestRaw =
+        (latestRes.data?.settings ??
+          latestRes.data ??
+          {}) as Partial<SettingsData>;
+
+      // 2. Faz o merge cirúrgico: Mantém tudo atualizado do server, mas altera APENAS o que essa tela controla
+      const mergedSettings: SettingsData = {
+        ...normalizeSettings(latestRaw),
+        tags_auto_create: settings.tags_auto_create, // <-- Correção principal aqui!
       };
+
+      // 3. Salva a nova configuração
+      const response = await axios.post('./api/settings', mergedSettings);
+
+      const raw =
+        (response.data?.settings ??
+          response.data ??
+          {}) as Partial<SettingsData>;
+
+      const normalized = normalizeSettings(raw);
+
+      // 4. Atualiza o estado local com a confirmação do servidor
       setSettings(normalized);
       setInitialSettings(normalized);
+
+      setMessage('Settings saved successfully');
       setTimeout(() => setMessage(''), 3000);
     } catch (err) {
       console.error('Error saving settings:', err);
@@ -77,7 +109,7 @@ export default function TagSettings() {
     }
   };
 
-  // Handle checkbox change
+  // Alterna o checkbox
   const handleToggle = () => {
     setSettings((prev) => ({
       ...prev,
@@ -92,7 +124,9 @@ export default function TagSettings() {
   return (
     <div className="p-6 bg-gray-100 dark:bg-gray-900">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-200">Tag Settings</h1>
+        <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-200">
+          Tag Settings
+        </h1>
       </div>
 
       <div className="bg-gray-800 p-4 rounded-lg space-y-4">
@@ -102,9 +136,9 @@ export default function TagSettings() {
             id="tagsAutoCreate"
             checked={settings.tags_auto_create}
             onChange={handleToggle}
-            className="w-4 h-4 mt-1 text-blue-600 bg-gray-700 border-gray-600
-                       rounded focus:ring-blue-500 focus:ring-2"
+            className="w-4 h-4 mt-1 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:ring-2"
           />
+
           <div className="flex-1">
             <label
               htmlFor="tagsAutoCreate"
@@ -112,14 +146,17 @@ export default function TagSettings() {
             >
               Automatically create new tags from AI suggestions
             </label>
+
             <p className="text-sm text-gray-400 mt-1">
-              When enabled, tags suggested by the AI that don't exist in Paperless-ngx
-              will be created automatically. When disabled, only existing tags will be used.
+              When enabled, tags suggested by the AI that don't exist in
+              Paperless-ngx will be created automatically. When disabled, only
+              existing tags will be used.
             </p>
+
             <div className="mt-2 p-2 bg-yellow-900/20 border border-yellow-700/50 rounded">
               <p className="text-xs text-yellow-400">
-                ⚠️ This will modify your Paperless-ngx tag list.
-                Review auto-created tags in Paperless-ngx settings.
+                ⚠️ This will modify your Paperless-ngx tag list. Review
+                auto-created tags in Paperless-ngx settings.
               </p>
             </div>
           </div>
@@ -127,13 +164,10 @@ export default function TagSettings() {
 
         <div className="flex items-center justify-between pt-4 border-t border-gray-700">
           <div className="flex-1">
-            {message && (
-              <p className="text-sm text-green-400">{message}</p>
-            )}
-            {error && (
-              <p className="text-sm text-red-400">{error}</p>
-            )}
+            {message && <p className="text-sm text-green-400">{message}</p>}
+            {error && <p className="text-sm text-red-400">{error}</p>}
           </div>
+
           <button
             onClick={handleSave}
             disabled={!hasChanges || saving}
