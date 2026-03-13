@@ -10,7 +10,7 @@ interface SettingsData {
   custom_fields_enable: boolean;
   custom_fields_selected_ids: number[];
   custom_fields_write_mode: 'append' | 'replace' | 'update';
-  tags_auto_create: boolean; // NEW: Tag auto-creation setting
+  tags_auto_create: boolean;
 }
 
 const CustomFieldsEditor: React.FC = () => {
@@ -29,8 +29,17 @@ const CustomFieldsEditor: React.FC = () => {
       const settingsRes = await fetch('./api/settings');
       if (!settingsRes.ok) throw new Error('Failed to fetch settings');
       const settingsData = await settingsRes.json();
-      setSettings(settingsData.settings);
-      setInitialSettings(settingsData.settings);
+
+      // Normaliza settings — garante que arrays nunca são null
+      const rawSettings = settingsData.settings || settingsData;
+      const normalizedSettings: SettingsData = {
+        ...rawSettings,
+        custom_fields_selected_ids: rawSettings.custom_fields_selected_ids ?? [],
+        custom_fields_write_mode: rawSettings.custom_fields_write_mode || 'append',
+      };
+
+      setSettings(normalizedSettings);
+      setInitialSettings(normalizedSettings);
 
       const customFieldsUrl = forcePull ? './api/custom_fields?force_pull=true' : './api/custom_fields';
       const customFieldsRes = await fetch(customFieldsUrl);
@@ -38,7 +47,6 @@ const CustomFieldsEditor: React.FC = () => {
         const customFieldsData = await customFieldsRes.json();
         setCustomFields(customFieldsData || []);
       } else {
-        // Don't throw error for custom fields fetch failure - just log it and use empty array
         console.warn('Failed to fetch custom fields, using empty array:', customFieldsRes.status, customFieldsRes.statusText);
         setCustomFields([]);
       }
@@ -70,17 +78,16 @@ const CustomFieldsEditor: React.FC = () => {
       // 1. Fetch current settings to avoid overwriting unrelated keys
       const latestRes = await fetch('/api/settings');
       const latest = latestRes.ok ? await latestRes.json() : {};
-      // Extract just the settings data, ignoring any custom_fields that might be returned
       const latestSettings = latest.settings || latest;
-      
-      // 2. Merge only our custom‐fields keys
+
+      // 2. Merge only our custom-fields keys
       const payload = {
         ...latestSettings,
-        custom_fields_selected_ids: settings.custom_fields_selected_ids,
-        custom_fields_write_mode: settings.custom_fields_write_mode,
+        custom_fields_selected_ids: settings.custom_fields_selected_ids ?? [],
+        custom_fields_write_mode: settings.custom_fields_write_mode || 'append',
         custom_fields_enable: settings.custom_fields_enable,
       };
-      
+
       const response = await fetch('/api/settings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -108,9 +115,10 @@ const CustomFieldsEditor: React.FC = () => {
 
   const handleFieldSelectionChange = (fieldId: number) => {
     if (!settings) return;
-    const newSelectedIds = settings.custom_fields_selected_ids.includes(fieldId)
-      ? settings.custom_fields_selected_ids.filter((id) => id !== fieldId)
-      : [...settings.custom_fields_selected_ids, fieldId];
+    const currentIds = settings.custom_fields_selected_ids ?? [];
+    const newSelectedIds = currentIds.includes(fieldId)
+      ? currentIds.filter((id) => id !== fieldId)
+      : [...currentIds, fieldId];
     handleSettingChange('custom_fields_selected_ids', newSelectedIds);
   };
 
@@ -226,7 +234,7 @@ const CustomFieldsEditor: React.FC = () => {
                     <input
                       type="checkbox"
                       id={`field-${field.id}`}
-                      checked={settings.custom_fields_selected_ids.includes(field.id)}
+                      checked={(settings.custom_fields_selected_ids ?? []).includes(field.id)}
                       onChange={() => handleFieldSelectionChange(field.id)}
                       className="w-4 h-4 mr-2"
                     />
