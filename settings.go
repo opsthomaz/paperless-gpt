@@ -25,13 +25,11 @@ func saveSettingsLocked() error {
 	if err := os.MkdirAll(configDir, 0755); err != nil {
 		return err
 	}
-
 	// Marshal the settings struct to JSON
 	data, err := json.MarshalIndent(settings, "", "  ")
 	if err != nil {
 		return err
 	}
-
 	// Write the file
 	return os.WriteFile(filepath.Join(configDir, settingsFile), data, 0644)
 }
@@ -47,7 +45,7 @@ func loadSettings() {
 	// Define default settings
 	loadDefaultSettings := func() {
 		settings = Settings{
-			CustomFieldsEnable:      false,
+			CustomFieldsEnable:      os.Getenv("ENABLE_AUTO_CUSTOM_FIELDS") == "true",
 			CustomFieldsSelectedIDs: []int{},
 			CustomFieldsWriteMode:   "append",
 		}
@@ -55,14 +53,12 @@ func loadSettings() {
 
 	if err != nil {
 		if os.IsNotExist(err) {
-			// File doesn't exist, create it with defaults
 			log.Infof("Settings file not found at %s, creating with default values.", settingsPath)
 			loadDefaultSettings()
 			if err := saveSettingsLocked(); err != nil {
 				log.Fatalf("Failed to create default settings file: %v", err)
 			}
 		} else {
-			// Another error occurred while reading
 			log.Warnf("Failed to read settings file: %v. Loading default settings.", err)
 			loadDefaultSettings()
 		}
@@ -74,6 +70,11 @@ func loadSettings() {
 		log.Warnf("Failed to parse settings file, please check its format. Loading default settings. Error: %v", err)
 		loadDefaultSettings()
 		return
+	}
+
+	// Override with environment variables if set
+	if os.Getenv("ENABLE_AUTO_CUSTOM_FIELDS") == "true" {
+		settings.CustomFieldsEnable = true
 	}
 
 	log.Info("Successfully loaded settings from settings.json")
