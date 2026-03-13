@@ -26,9 +26,15 @@ export default function TagSettings() {
     const fetchSettings = async () => {
       try {
         const response = await axios.get('./api/settings');
-        const settingsData = response.data.settings as SettingsData;
-        setSettings(settingsData);
-        setInitialSettings(settingsData);
+        const raw = response.data.settings as SettingsData;
+        const normalized: SettingsData = {
+          custom_fields_enable: raw.custom_fields_enable ?? false,
+          custom_fields_selected_ids: raw.custom_fields_selected_ids ?? [],
+          custom_fields_write_mode: raw.custom_fields_write_mode || 'append',
+          tags_auto_create: raw.tags_auto_create ?? false,
+        };
+        setSettings(normalized);
+        setInitialSettings(normalized);
         setLoading(false);
       } catch (err) {
         console.error('Error fetching settings:', err);
@@ -49,17 +55,19 @@ export default function TagSettings() {
     setError('');
 
     try {
-      // Only send the field this component manages (partial update)
       const response = await axios.post('./api/settings', {
         tags_auto_create: settings.tags_auto_create
       });
       setMessage('Settings saved successfully');
-      // Update both settings and initialSettings with the server response
-      const settingsData = response.data.settings as SettingsData;
-      setSettings(settingsData);
-      setInitialSettings(settingsData);
-
-      // Clear message after 3 seconds
+      const raw = response.data.settings as SettingsData;
+      const normalized: SettingsData = {
+        custom_fields_enable: raw.custom_fields_enable ?? false,
+        custom_fields_selected_ids: raw.custom_fields_selected_ids ?? [],
+        custom_fields_write_mode: raw.custom_fields_write_mode || 'append',
+        tags_auto_create: raw.tags_auto_create ?? false,
+      };
+      setSettings(normalized);
+      setInitialSettings(normalized);
       setTimeout(() => setMessage(''), 3000);
     } catch (err) {
       console.error('Error saving settings:', err);
@@ -88,7 +96,6 @@ export default function TagSettings() {
       </div>
 
       <div className="bg-gray-800 p-4 rounded-lg space-y-4">
-        {/* Tag Auto-Creation Toggle */}
         <div className="flex items-start space-x-3">
           <input
             type="checkbox"
@@ -118,7 +125,6 @@ export default function TagSettings() {
           </div>
         </div>
 
-        {/* Save Button */}
         <div className="flex items-center justify-between pt-4 border-t border-gray-700">
           <div className="flex-1">
             {message && (
