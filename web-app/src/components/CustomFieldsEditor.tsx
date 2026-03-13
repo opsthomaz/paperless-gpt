@@ -13,15 +13,30 @@ interface SettingsData {
   tags_auto_create: boolean;
 }
 
+const defaultSettings: SettingsData = {
+  custom_fields_enable: false,
+  custom_fields_selected_ids: [],
+  custom_fields_write_mode: 'append',
+  tags_auto_create: false,
+};
+
 const CustomFieldsEditor: React.FC = () => {
   const [customFields, setCustomFields] = useState<CustomField[]>([]);
-  const [settings, setSettings] = useState<SettingsData | null>(null);
-  const [initialSettings, setInitialSettings] = useState<SettingsData | null>(null);
+  const [settings, setSettings] = useState<SettingsData>(defaultSettings);
+  const [initialSettings, setInitialSettings] = useState<SettingsData>(defaultSettings);
+  
   const [isDirty, setIsDirty] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  const normalizeSettings = useCallback((raw: Partial<SettingsData> = {}): SettingsData => ({
+    custom_fields_enable: raw.custom_fields_enable ?? false,
+    custom_fields_selected_ids: raw.custom_fields_selected_ids ?? [],
+    custom_fields_write_mode: raw.custom_fields_write_mode ?? 'append',
+    tags_auto_create: raw.tags_auto_create ?? false,
+  }), []);
 
   const fetchInitialData = useCallback(async (forcePull = false) => {
     setIsLoading(true);
@@ -30,13 +45,8 @@ const CustomFieldsEditor: React.FC = () => {
       if (!settingsRes.ok) throw new Error('Failed to fetch settings');
       const settingsData = await settingsRes.json();
 
-      // Normaliza settings — garante que arrays nunca são null
-      const rawSettings = settingsData.settings || settingsData;
-      const normalizedSettings: SettingsData = {
-        ...rawSettings,
-        custom_fields_selected_ids: rawSettings.custom_fields_selected_ids ?? [],
-        custom_fields_write_mode: rawSettings.custom_fields_write_mode || 'append',
-      };
+      const raw = (settingsData?.settings ?? settingsData ?? {}) as Partial<SettingsData>;
+      const normalizedSettings = normalizeSettings(raw);
 
       setSettings(normalizedSettings);
       setInitialSettings(normalizedSettings);
@@ -47,27 +57,24 @@ const CustomFieldsEditor: React.FC = () => {
         const customFieldsData = await customFieldsRes.json();
         setCustomFields(customFieldsData || []);
       } else {
-        console.warn('Failed to fetch custom fields, using empty array:', customFieldsRes.status, customFieldsRes.statusText);
+        console.warn('Failed to fetch custom fields:', customFieldsRes.status);
         setCustomFields([]);
       }
-
     } catch (err) {
       console.error('Error fetching initial data:', err);
       setError(err instanceof Error ? err.message : 'An unknown error occurred');
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [normalizeSettings]);
 
   useEffect(() => {
     fetchInitialData();
   }, [fetchInitialData]);
 
   useEffect(() => {
-    if (initialSettings && settings) {
-      const hasChanged = JSON.stringify(settings) !== JSON.stringify(initialSettings);
-      setIsDirty(hasChanged);
-    }
+    const hasChanged = JSON.stringify(settings) !== JSON.stringify(initialSettings);
+    setIsDirty(hasChanged);
   }, [settings, initialSettings]);
 
   const handleSaveSettings = useCallback(async () => {
@@ -75,29 +82,36 @@ const CustomFieldsEditor: React.FC = () => {
     setIsSaving(true);
     setError(null);
     try {
-      // 1. Fetch current settings to avoid overwriting unrelated keys
       const latestRes = await fetch('/api/settings');
-      const latest = latestRes.ok ? await latestRes.json() : {};
-      const latestSettings = latest.settings || latest;
-
-      // 2. Merge only our custom-fields keys
-      const payload = {
-        ...latestSettings,
-        custom_fields_selected_ids: settings.custom_fields_selected_ids ?? [],
-        custom_fields_write_mode: settings.custom_fields_write_mode || 'append',
+      const latestData = latestRes.ok ? await latestRes.json() : {};
+      const latestRaw = (latestData?.settings ?? latestData ?? {}) as Partial<SettingsData>;
+      
+      const mergedSettings: SettingsData = {
+        ...normalizeSettings(latestRaw),
         custom_fields_enable: settings.custom_fields_enable,
+        custom_fields_selected_ids: settings.custom_fields_selected_ids,
+        custom_fields_write_mode: settings.custom_fields_write_mode,
       };
+
 
       const response = await fetch('/api/settings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(mergedSettings),
       });
+
       if (!response.ok) {
         const errData = await response.json();
         throw new Error(errData.error || 'Failed to save settings');
       }
-      setInitialSettings(settings);
+
+      const rawResponse = await response.json();
+      const finalRaw = (rawResponse?.settings ?? rawResponse ?? {}) as Partial<SettingsData>;
+      const finalNormalized = normalizeSettings(finalRaw);
+
+      setSettings(finalNormalized);
+      setInitialSettings(finalNormalized);
+      
       setSuccessMessage('Settings saved successfully!');
       setTimeout(() => setSuccessMessage(null), 3000);
     } catch (err) {
@@ -107,24 +121,21 @@ const CustomFieldsEditor: React.FC = () => {
     } finally {
       setIsSaving(false);
     }
-  }, [settings, isDirty]);
+  }, [settings, isDirty, normalizeSettings]);
 
   const handleSettingChange = <K extends keyof SettingsData>(key: K, value: SettingsData[K]) => {
-    setSettings((prev) => (prev ? { ...prev, [key]: value } : null));
+    setSettings((prev) => ({ ...prev, [key]: value }));
   };
 
   const handleFieldSelectionChange = (fieldId: number) => {
-    if (!settings) return;
-    const currentIds = settings.custom_fields_selected_ids ?? [];
+    const currentIds = settings.custom_fields_selected_ids;
     const newSelectedIds = currentIds.includes(fieldId)
       ? currentIds.filter((id) => id !== fieldId)
       : [...currentIds, fieldId];
     handleSettingChange('custom_fields_selected_ids', newSelectedIds);
   };
 
-  if (isLoading) {
-    return <div className="p-6">Loading...</div>;
-  }
+  if (isLoading) return <div className="p-6 text-gray-400">Loading...</div>;
 
   if (error) {
     return (
@@ -134,10 +145,6 @@ const CustomFieldsEditor: React.FC = () => {
     );
   }
 
-  if (!settings) {
-    return <div className="p-6">No settings found.</div>;
-  }
-
   return (
     <div className="p-6 bg-gray-100 dark:bg-gray-900">
       <div className="flex justify-between items-center mb-6">
@@ -145,7 +152,6 @@ const CustomFieldsEditor: React.FC = () => {
         <button
           onClick={() => fetchInitialData(true)}
           className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-          aria-label="Refresh custom fields"
         >
           Refresh
         </button>
@@ -167,16 +173,16 @@ const CustomFieldsEditor: React.FC = () => {
                 id="customFieldsEnable"
                 checked={settings.custom_fields_enable}
                 onChange={(e) => handleSettingChange('custom_fields_enable', e.target.checked)}
-                className="w-4 h-4 mr-2"
+                className="w-4 h-4 mr-2 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500"
               />
-              <label htmlFor="customFieldsEnable">
+              <label htmlFor="customFieldsEnable" className="text-gray-700 dark:text-gray-200 cursor-pointer">
                 Automatically generate custom fields
               </label>
             </div>
 
             <fieldset disabled={!settings.custom_fields_enable} className="disabled:opacity-50">
               <div>
-                <h3 className="mb-2 font-semibold">Write Mode:</h3>
+                <h3 className="mb-2 font-semibold text-gray-700 dark:text-gray-300">Write Mode:</h3>
                 <div className="flex items-center mb-2">
                   <input
                     type="radio"
@@ -187,8 +193,8 @@ const CustomFieldsEditor: React.FC = () => {
                     onChange={() => handleSettingChange('custom_fields_write_mode', 'append')}
                     className="w-4 h-4 mr-2"
                   />
-                  <label htmlFor="writeModeAppend">
-                    Append (add new custom-fields, keep existing (safest option))
+                  <label htmlFor="writeModeAppend" className="text-gray-700 dark:text-gray-300 cursor-pointer">
+                    Append (safest option)
                   </label>
                 </div>
                 <div className="flex items-center mb-2">
@@ -201,8 +207,8 @@ const CustomFieldsEditor: React.FC = () => {
                     onChange={() => handleSettingChange('custom_fields_write_mode', 'update')}
                     className="w-4 h-4 mr-2"
                   />
-                  <label htmlFor="writeModeUpdate">
-                    Update (add new custom-fields, update existing)
+                  <label htmlFor="writeModeUpdate" className="text-gray-700 dark:text-gray-300 cursor-pointer">
+                    Update (add new, update existing)
                   </label>
                 </div>
                 <div className="flex items-center">
@@ -215,8 +221,8 @@ const CustomFieldsEditor: React.FC = () => {
                     onChange={() => handleSettingChange('custom_fields_write_mode', 'replace')}
                     className="w-4 h-4 mr-2"
                   />
-                  <label htmlFor="writeModeReplace">
-                    Replace (replace all custom-fields with suggestions only)
+                  <label htmlFor="writeModeReplace" className="text-gray-700 dark:text-gray-300 cursor-pointer">
+                    Replace (suggestions only)
                   </label>
                 </div>
               </div>
@@ -236,9 +242,11 @@ const CustomFieldsEditor: React.FC = () => {
                       id={`field-${field.id}`}
                       checked={(settings.custom_fields_selected_ids ?? []).includes(field.id)}
                       onChange={() => handleFieldSelectionChange(field.id)}
-                      className="w-4 h-4 mr-2"
+                      className="w-4 h-4 mr-2 rounded text-blue-600 focus:ring-blue-500"
                     />
-                    <label htmlFor={`field-${field.id}`}>{field.name}</label>
+                    <label htmlFor={`field-${field.id}`} className="text-gray-700 dark:text-gray-300 cursor-pointer">
+                      {field.name}
+                    </label>
                   </div>
                 ))}
               </div>

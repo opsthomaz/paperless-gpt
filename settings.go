@@ -46,8 +46,10 @@ func loadSettings() {
 	loadDefaultSettings := func() {
 		settings = Settings{
 			CustomFieldsEnable:      os.Getenv("ENABLE_AUTO_CUSTOM_FIELDS") == "true",
+			CustomFieldsEnable:      os.Getenv("ENABLE_AUTO_CUSTOM_FIELDS") == "true",
 			CustomFieldsSelectedIDs: []int{},
 			CustomFieldsWriteMode:   "append",
+			TagsAutoCreate:          false, // Adicionado aqui
 		}
 	}
 
@@ -70,6 +72,11 @@ func loadSettings() {
 		log.Warnf("Failed to parse settings file, please check its format. Loading default settings. Error: %v", err)
 		loadDefaultSettings()
 		return
+	}
+
+	// Garante que o array nunca seja nulo (evita retornar 'null' no JSON para o frontend)
+	if settings.CustomFieldsSelectedIDs == nil {
+		settings.CustomFieldsSelectedIDs = []int{}
 	}
 
 	// Override with environment variables if set

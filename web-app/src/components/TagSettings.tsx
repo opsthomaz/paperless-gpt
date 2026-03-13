@@ -8,47 +8,29 @@ interface SettingsData {
   tags_auto_create: boolean;
 }
 
-// Valores padrão seguros
-const defaultSettings: SettingsData = {
-  custom_fields_enable: false,
-  custom_fields_selected_ids: [],
-  custom_fields_write_mode: 'append',
-  tags_auto_create: false,
-};
-
 export default function TagSettings() {
-  const [settings, setSettings] = useState<SettingsData>(defaultSettings);
-  const [initialSettings, setInitialSettings] = useState<SettingsData>(defaultSettings);
-
+  const [settings, setSettings] = useState<SettingsData>({
+    custom_fields_enable: false,
+    custom_fields_selected_ids: [],
+    custom_fields_write_mode: 'append',
+    tags_auto_create: false,
+  });
+  const [initialSettings, setInitialSettings] = useState<SettingsData>(settings);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
 
-  // Normaliza dados vindos da API, garantindo que nunca sejam undefined
-  const normalizeSettings = (raw: Partial<SettingsData> = {}): SettingsData => ({
-    custom_fields_enable: raw.custom_fields_enable ?? false,
-    custom_fields_selected_ids: raw.custom_fields_selected_ids ?? [],
-    custom_fields_write_mode: raw.custom_fields_write_mode ?? 'append',
-    tags_auto_create: raw.tags_auto_create ?? false,
-  });
-
-  // Carrega settings ao iniciar
+  // Fetch settings on mount
   useEffect(() => {
     const fetchSettings = async () => {
       try {
         const response = await axios.get('./api/settings');
-
-        const raw =
-          (response.data?.settings ??
-            response.data ??
-            {}) as Partial<SettingsData>;
-
-        const normalized = normalizeSettings(raw);
-
-        setSettings(normalized);
-        setInitialSettings(normalized);
+        const settingsData = response.data.settings as SettingsData;
+        setSettings(settingsData);
+        setInitialSettings(settingsData);
+        setLoading(false);
       } catch (err) {
         console.error('Error fetching settings:', err);
         setError('Failed to load settings');
@@ -60,45 +42,20 @@ export default function TagSettings() {
     fetchSettings();
   }, []);
 
-  // Detecta mudanças para habilitar/desabilitar o botão de salvar
-  const hasChanges =
-    JSON.stringify(settings) !== JSON.stringify(initialSettings);
+  // Check if settings have changed
+  const hasChanges = JSON.stringify(settings) !== JSON.stringify(initialSettings);
 
-  // Salvar settings
+  // Save settings
   const handleSave = async () => {
     setSaving(true);
     setMessage('');
     setError('');
 
     try {
-      // 1. Pega os settings mais atuais do servidor para não sobrescrever outros módulos (ex: Custom Fields)
-      const latestRes = await axios.get('./api/settings');
-
-      const latestRaw =
-        (latestRes.data?.settings ??
-          latestRes.data ??
-          {}) as Partial<SettingsData>;
-
-      // 2. Faz o merge cirúrgico: Mantém tudo atualizado do server, mas altera APENAS o que essa tela controla
-      const mergedSettings: SettingsData = {
-        ...normalizeSettings(latestRaw),
-        tags_auto_create: settings.tags_auto_create, // <-- Correção principal aqui!
-      };
-
-      // 3. Salva a nova configuração
-      const response = await axios.post('./api/settings', mergedSettings);
-
-      const raw =
-        (response.data?.settings ??
-          response.data ??
-          {}) as Partial<SettingsData>;
-
-      const normalized = normalizeSettings(raw);
-
-      // 4. Atualiza o estado local com a confirmação do servidor
-      setSettings(normalized);
-      setInitialSettings(normalized);
-
+      // Only send the field this component manages (partial update)
+      await axios.post('./api/settings', {
+        tags_auto_create: settings.tags_auto_create
+      });
       setMessage('Settings saved successfully');
       setTimeout(() => setMessage(''), 3000);
     } catch (err) {
@@ -109,7 +66,7 @@ export default function TagSettings() {
     }
   };
 
-  // Alterna o checkbox
+  // Handle checkbox change
   const handleToggle = () => {
     setSettings((prev) => ({
       ...prev,
@@ -117,9 +74,7 @@ export default function TagSettings() {
     }));
   };
 
-  if (loading) {
-    return <div className="text-gray-400">Loading settings...</div>;
-  }
+  if (loading) return <div className="text-gray-400">Loading settings...</div>;
 
   return (
     <div className="p-6 bg-gray-100 dark:bg-gray-900">
@@ -140,23 +95,19 @@ export default function TagSettings() {
           />
 
           <div className="flex-1">
-            <label
-              htmlFor="tagsAutoCreate"
-              className="block text-sm font-medium text-gray-200 cursor-pointer"
-            >
+            <label htmlFor="tagsAutoCreate" className="block text-sm font-medium text-gray-200 cursor-pointer">
               Automatically create new tags from AI suggestions
             </label>
 
             <p className="text-sm text-gray-400 mt-1">
-              When enabled, tags suggested by the AI that don't exist in
-              Paperless-ngx will be created automatically. When disabled, only
-              existing tags will be used.
+              When enabled, tags suggested by the AI that don't exist in Paperless-ngx
+              will be created automatically. When disabled, only existing tags will be used.
             </p>
 
             <div className="mt-2 p-2 bg-yellow-900/20 border border-yellow-700/50 rounded">
               <p className="text-xs text-yellow-400">
-                ⚠️ This will modify your Paperless-ngx tag list. Review
-                auto-created tags in Paperless-ngx settings.
+                ⚠️ This will modify your Paperless-ngx tag list.
+                Review auto-created tags in Paperless-ngx settings.
               </p>
             </div>
           </div>
@@ -172,9 +123,7 @@ export default function TagSettings() {
             onClick={handleSave}
             disabled={!hasChanges || saving}
             className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-              hasChanges && !saving
-                ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                : 'bg-gray-700 text-gray-500 cursor-not-allowed'
+              hasChanges && !saving ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-gray-700 text-gray-500 cursor-not-allowed'
             }`}
           >
             {saving ? 'Saving...' : 'Save Changes'}

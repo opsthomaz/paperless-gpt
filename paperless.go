@@ -231,14 +231,6 @@ func (client *PaperlessClient) Do(ctx context.Context, method, path string, body
 			bodyBytes, _ := io.ReadAll(resp.Body)
 			resp.Body.Close()
 
-			// Create a new response with the same body for the caller
-			resp = &http.Response{
-				Status:     resp.Status,
-				StatusCode: resp.StatusCode,
-				Header:     resp.Header,
-				Body:       io.NopCloser(bytes.NewBuffer(bodyBytes)),
-			}
-
 			log.WithFields(logrus.Fields{
 				"url":          url,
 				"method":       method,

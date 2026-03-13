@@ -375,7 +375,7 @@ func (app *App) processAutoOcrTagDocuments(ctx context.Context) (int, error) {
 
 		// Skip updating the original document if it was actually replaced (deleted) during OCR.
 		// The replacement document will be processed as a new document on the next cycle.
-		if options.ReplaceOriginal && processedDoc != nil && processedDoc.ReplacedOriginal {
+		if options.ReplaceOriginal && processedDoc.ReplacedOriginal {
 			cancel()
 			docLogger.Info("Skipping tag update for replaced document (original was deleted)")
 		} else {

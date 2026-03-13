@@ -176,7 +176,8 @@ func (app *App) ProcessDocumentOCR(ctx context.Context, documentID int, options 
 		processMode = app.ocrProcessMode
 	}
 
-	if processMode == "whole_pdf" {
+	switch processMode {
+	case "whole_pdf":
 		// Process the entire PDF in one go, skipping the splitting step
 		var pdfBytes []byte
 		var err error
@@ -215,7 +216,7 @@ func (app *App) ProcessDocumentOCR(ctx context.Context, documentID int, options 
 			Debug("OCR completed for full document")
 
 		ocrTexts = append(ocrTexts, result.Text)
-	} else if processMode == "pdf" {
+	case "pdf":
 		// Process PDF pages individually
 		pdfPaths, pdfData, pdfPageCount, err := app.Client.DownloadDocumentAsPDF(ctx, documentID, pageLimit, true)
 		defer func() {
@@ -273,7 +274,7 @@ func (app *App) ProcessDocumentOCR(ctx context.Context, documentID int, options 
 
 			ocrTexts = append(ocrTexts, result.Text)
 		}
-	} else {
+	default:
 		// Process pages as images
 		imagePaths, imgPageCount, err := app.Client.DownloadDocumentAsImages(ctx, documentID, pageLimit)
 		defer func() {
@@ -494,7 +495,7 @@ func (app *App) saveHOCRToFile(documentID int, hOCR string) error {
 }
 
 // savePDFToFile saves the PDF data to a file
-func (app *App) savePDFToFile(ctx context.Context, documentID int, pdfData []byte) error {
+func (app *App) savePDFToFile(_ context.Context, documentID int, pdfData []byte) error {
 	// Ensure the directory exists
 	if err := os.MkdirAll(app.localPDFPath, 0755); err != nil {
 		return fmt.Errorf("failed to create PDF output directory: %w", err)

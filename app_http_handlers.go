@@ -92,7 +92,10 @@ func updatePromptsHandler(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Prompt saved successfully"})
+	c.JSON(http.StatusOK, gin.H{
+		"message":  "Settings saved successfully",
+		"settings": settings,
+	})
 }
 
 // getAllTagsHandler handles the GET /api/tags endpoint
@@ -148,7 +151,10 @@ func (app *App) updateSettingsHandler(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Settings saved successfully"})
+	c.JSON(http.StatusOK, gin.H{
+		"message":  "Settings saved successfully",
+		"settings": settings,
+	})
 }
 
 // getCustomFieldsHandler handles the GET /api/custom_fields endpoint
@@ -264,9 +270,10 @@ func (app *App) getJobStatusHandler(c *gin.Context) {
 		"total_pages": job.TotalPages,
 	}
 
-	if job.Status == "completed" {
+	switch job.Status {
+	case "completed":
 		response["result"] = job.Result
-	} else if job.Status == "failed" {
+	case "failed":
 		response["error"] = job.Result
 	}
 
@@ -286,9 +293,10 @@ func (app *App) getAllJobsHandler(c *gin.Context) {
 			"pages_done": job.PagesDone,
 		}
 
-		if job.Status == "completed" {
+		switch job.Status {
+		case "completed":
 			response["result"] = job.Result
-		} else if job.Status == "failed" {
+		case "failed":
 			response["error"] = job.Result
 		}
 
