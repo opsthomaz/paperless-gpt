@@ -12,6 +12,8 @@ import (
 
 	_ "image/jpeg"
 
+	"paperless-gpt/sanitize"
+
 	"github.com/gabriel-vasile/mimetype"
 	"github.com/sirupsen/logrus"
 	"github.com/tmc/langchaingo/llms"
@@ -19,7 +21,6 @@ import (
 	"github.com/tmc/langchaingo/llms/mistral"
 	"github.com/tmc/langchaingo/llms/ollama"
 	"github.com/tmc/langchaingo/llms/openai"
-	"paperless-gpt/sanitize"
 )
 
 // LLMProvider implements OCR using LLM vision models
@@ -133,10 +134,11 @@ func (p *LLMProvider) ProcessImage(ctx context.Context, imageContent []byte, pag
 	var parts []llms.ContentPart
 	var contentPart llms.ContentPart
 
-	if providerName == "openai" || providerName == "mistral" {
+	switch providerName {
+	case "openai", "mistral":
 		logger.Info("Using OpenAI image format")
 		contentPart = llms.ImageURLPart("data:image/jpeg;base64," + base64.StdEncoding.EncodeToString(imageContent))
-	} else if providerName == "googleai" {
+	case "googleai":
 		// GoogleAI supports both images and PDFs via BinaryPart
 		if isPDF {
 			logger.Info("Using GoogleAI PDF format")
@@ -145,7 +147,7 @@ func (p *LLMProvider) ProcessImage(ctx context.Context, imageContent []byte, pag
 			logger.Info("Using GoogleAI image format")
 			contentPart = llms.BinaryPart("image/jpeg", imageContent)
 		}
-	} else {
+	default:
 		logger.Info("Using binary image format")
 		contentPart = llms.BinaryPart("image/jpeg", imageContent)
 	}

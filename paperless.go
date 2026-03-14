@@ -647,12 +647,29 @@ func (client *PaperlessClient) UpdateDocuments(ctx context.Context, documents []
 
 		log.Debugf("Document %d: Final tag names after compacting: %v", documentID, finalTagNames)
 
-		// NOTE: this will dump the OCR complete tag if it doesn't exist in paperless-ngx
+		// Check if auto-creation of tags is enabled
+		settingsMutex.RLock()
+		tagsAutoCreate := settings.TagsAutoCreate
+		settingsMutex.RUnlock()
+
 		if !hasSameTags(originalDoc.Tags, finalTagNames) {
 			var finalTagIDs []int
 			for _, tagName := range finalTagNames {
+				if tagName == "" {
+					continue
+				}
 				if tagID, exists := availableTags[tagName]; exists {
 					finalTagIDs = append(finalTagIDs, tagID)
+				} else if tagsAutoCreate {
+					// Auto-create the tag if it doesn't exist
+					newTagID, err := client.CreateTag(ctx, tagName)
+					if err != nil {
+						log.Warnf("Could not auto-create tag '%s': %v", tagName, err)
+					} else {
+						finalTagIDs = append(finalTagIDs, newTagID)
+						availableTags[tagName] = newTagID // cache locally to avoid duplicate creation
+						log.Infof("Auto-created tag '%s' with ID %d", tagName, newTagID)
+					}
 				}
 			}
 			// Only update tags if there are remaining tags after changes

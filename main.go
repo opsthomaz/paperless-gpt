@@ -171,6 +171,9 @@ func main() {
 	// Initialize PaperlessClient
 	client := NewPaperlessClient(paperlessBaseURL, paperlessAPIToken)
 
+	// Ensure system tags exist in Paperless-NGX
+	ensureSystemTagsExist(ctx, client)
+
 	// Initial fetch of custom fields
 	refreshCustomFieldsCache(client)
 
@@ -572,6 +575,33 @@ func validateOCRProviderModeCompatibility(provider, mode, visionProvider string)
 
 	return fmt.Errorf("OCR provider '%s' does not support processing mode '%s'. Supported modes: %v",
 		provider, mode, modes)
+}
+
+// ensureSystemTagsExist creates the required system tags in Paperless-NGX if they don't exist.
+// This runs at startup so the pipeline works without manual tag creation.
+func ensureSystemTagsExist(ctx context.Context, client *PaperlessClient) {
+	systemTags := []string{autoTag, autoOcrTag, pdfOCRCompleteTag, manualTag}
+
+	existingTags, err := client.GetAllTags(ctx)
+	if err != nil {
+		log.Warnf("Could not fetch tags to ensure system tags exist: %v", err)
+		return
+	}
+
+	for _, tagName := range systemTags {
+		if tagName == "" {
+			continue
+		}
+		if _, exists := existingTags[tagName]; !exists {
+			tagID, err := client.CreateTag(ctx, tagName)
+			if err != nil {
+				log.Fatalf("Failed to create required system tag '%s': %v", tagName, err)
+			}
+			log.Infof("Created system tag '%s' with ID %d", tagName, tagID)
+		} else {
+			log.Debugf("System tag '%s' already exists", tagName)
+		}
+	}
 }
 
 // validateOrDefaultEnvVars ensures all necessary environment variables are set

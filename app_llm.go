@@ -154,6 +154,15 @@ func (app *App) getSuggestedTags(
 	slices.Sort(suggestedTags)
 	suggestedTags = slices.Compact(suggestedTags)
 
+	// If TagsAutoCreate is enabled, skip filtering - the LLM can suggest new tags
+	settingsMutex.RLock()
+	autoCreate := settings.TagsAutoCreate
+	settingsMutex.RUnlock()
+
+	if autoCreate {
+		return suggestedTags, nil
+	}
+
 	// Filter out tags that are not in the available tags list
 	filteredTags := []string{}
 	for _, tag := range suggestedTags {

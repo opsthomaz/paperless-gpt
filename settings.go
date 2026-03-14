@@ -83,5 +83,10 @@ func loadSettings() {
 		settings.CustomFieldsEnable = true
 	}
 
+	// TagsAutoCreate is a new setting, so we check the environment variable for it as well
+	if os.Getenv("TAGS_AUTO_CREATE") == "true" {
+		settings.TagsAutoCreate = true
+	}
+
 	log.Info("Successfully loaded settings from settings.json")
 }
