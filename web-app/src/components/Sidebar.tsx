@@ -18,6 +18,7 @@ const Sidebar: React.FC = () => {
   const [ocrEnabled, setOcrEnabled] = useState(false);
 
   useEffect(() => {
+    // cancelled flag prevents setState from firing after the component unmounts
     let cancelled = false;
     axios.get<{ enabled: boolean }>("./api/experimental/ocr")
       .then((res) => { if (!cancelled) setOcrEnabled(res.data.enabled); })
@@ -59,6 +60,7 @@ const Sidebar: React.FC = () => {
       <ul className="menu-items">
         {menuItems.map((item) => (
           (() => {
+            // Compare only the last path segment to support reverse-proxy base paths
             const currentPathParts = location.pathname.split("/");
             const itemPathParts = item.path.split("/");
             const currentPathTail = currentPathParts[currentPathParts.length - 1];

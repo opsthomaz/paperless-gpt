@@ -26,6 +26,7 @@ const ExperimentalOCR: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [documentDetails, setDocumentDetails] = useState<Document | null>(null);
   const [perPageResults, setPerPageResults] = useState<OCRPageResult[]>([]);
+  // useRef keeps this counter across renders without triggering re-renders
   const lastFetchedPagesDoneRef = useRef(0);
 
   const [reOcrLoading, setReOcrLoading] = useState<{ [pageIdx: number]: boolean }>({});
@@ -163,6 +164,7 @@ const ExperimentalOCR: React.FC = () => {
     setReOcrLoading((prev) => ({ ...prev, [pageIdx]: true }));
     setReOcrErrors((prev) => ({ ...prev, [pageIdx]: "" }));
 
+    // Store the controller so the cancel button can abort this request later
     const controller = new AbortController();
     setReOcrAbortControllers((prev) => ({ ...prev, [pageIdx]: controller }));
 

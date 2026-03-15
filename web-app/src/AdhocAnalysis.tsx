@@ -18,6 +18,7 @@ const AdhocAnalysis: React.FC = () => {
   const fetchDocuments = async () => {
     try {
       setLoading(true);
+      // Fetch documents and filter tag in parallel to reduce loading time
       const [documentsRes, filterTagRes] = await Promise.all([
         axios.get<Document[]>('./api/documents'),
         axios.get<{ tag: string }>('./api/filter-tag'),
@@ -36,7 +37,7 @@ const AdhocAnalysis: React.FC = () => {
       const res = await axios.get<{[key: string]: string}>('./api/prompts');
       const defaultPrompt = res.data['adhoc-analysis_prompt.tmpl'] || '';
       setPrompt(defaultPrompt);
-      setOriginalPrompt(defaultPrompt);
+      setOriginalPrompt(defaultPrompt); // kept separately to allow "Reset to Default"
     } catch (err) {
       console.error(err);
     }

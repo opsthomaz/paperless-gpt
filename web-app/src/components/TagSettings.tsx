@@ -51,6 +51,7 @@ export default function TagSettings() {
         tags_auto_create: settings.tags_auto_create
       });
       setMessage('Settings saved successfully');
+      // Update baseline so toggling again after save is detected as a new change
       setInitialSettings(settings);
       setTimeout(() => setMessage(''), 3000);
     } catch (err) {

@@ -31,6 +31,7 @@ const CustomFieldsEditor: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
+  // Ensures all fields have safe defaults when the API returns a partial object
   const normalizeSettings = useCallback((raw: Partial<SettingsData> = {}): SettingsData => ({
     custom_fields_enable: raw.custom_fields_enable ?? false,
     custom_fields_selected_ids: raw.custom_fields_selected_ids ?? [],
@@ -38,6 +39,7 @@ const CustomFieldsEditor: React.FC = () => {
     tags_auto_create: raw.tags_auto_create ?? false,
   }), []);
 
+  // forcePull=true triggers a fresh sync of custom fields from Paperless-ngx
   const fetchInitialData = useCallback(async (forcePull = false) => {
     setIsLoading(true);
     try {
@@ -72,6 +74,7 @@ const CustomFieldsEditor: React.FC = () => {
     fetchInitialData();
   }, [fetchInitialData]);
 
+  // Track whether current settings differ from the last saved state
   useEffect(() => {
     const hasChanged = JSON.stringify(settings) !== JSON.stringify(initialSettings);
     setIsDirty(hasChanged);
@@ -82,10 +85,12 @@ const CustomFieldsEditor: React.FC = () => {
     setIsSaving(true);
     setError(null);
     try {
+      // Re-fetch latest settings before saving to avoid overwriting changes from other components
       const latestRes = await fetch('./api/settings');
       const latestData = latestRes.ok ? await latestRes.json() : {};
       const latestRaw = (latestData?.settings ?? latestData ?? {}) as Partial<SettingsData>;
-      
+
+      // Merge: keep server values for fields not managed here (e.g. tags_auto_create)
       const mergedSettings: SettingsData = {
         ...normalizeSettings(latestRaw),
         custom_fields_enable: settings.custom_fields_enable,

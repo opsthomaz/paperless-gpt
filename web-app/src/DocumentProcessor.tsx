@@ -141,7 +141,7 @@ const DocumentProcessor: React.FC = () => {
         return;
       }
 
-      // Post-process suggestions to add names and isSelected flag
+      // Map field IDs to names and mark all suggestions as selected by default
       const customFieldMap = new Map((allCustomFields || []).map(cf => [cf.id, cf.name]));
       const processedSuggestions = data.map(suggestion => ({
         ...suggestion,
@@ -318,6 +318,7 @@ const DocumentProcessor: React.FC = () => {
     }
   };
 
+  // Poll for new documents every 500ms when the queue is empty
   useEffect(() => {
     if (documents.length === 0) {
       const interval = setInterval(async () => {

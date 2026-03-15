@@ -9,6 +9,7 @@ const PromptsEditor: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
+  // AbortController cancels the in-flight request if the component re-renders before it completes
   useEffect(() => {
     const controller = new AbortController();
     fetch('./api/prompts', { signal: controller.signal })
@@ -71,6 +72,7 @@ const PromptsEditor: React.FC = () => {
       .finally(() => setIsSaving(false));
   }, [selectedPrompt, content]);
 
+  // Ctrl+S / Cmd+S keyboard shortcut to save the current prompt
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       const isModS = (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's';
