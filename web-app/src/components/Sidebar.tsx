@@ -58,33 +58,31 @@ const Sidebar: React.FC = () => {
         </button>
       </div>
       <ul className="menu-items">
-        {menuItems.map((item) => (
-          (() => {
-            // Compare only the last path segment to support reverse-proxy base paths
-            const currentPathParts = location.pathname.split("/");
-            const itemPathParts = item.path.split("/");
-            const currentPathTail = currentPathParts[currentPathParts.length - 1];
-            const itemPathTail = itemPathParts[itemPathParts.length - 1];
-            return (
-          <li
-            key={item.name}
-            className={currentPathTail === itemPathTail ? "active" : ""}
-          >
-            <Link
-              to={item.path}
-              style={{ display: "flex", alignItems: "center" }}
+        {menuItems.map((item) => {
+          // Compare only the last path segment to support reverse-proxy base paths
+          const currentPathParts = location.pathname.split("/");
+          const itemPathParts = item.path.split("/");
+          const currentPathTail = currentPathParts[currentPathParts.length - 1];
+          const itemPathTail = itemPathParts[itemPathParts.length - 1];
+          return (
+            <li
+              key={item.name}
+              className={currentPathTail === itemPathTail ? "active" : ""}
             >
-              {/* <Icon path={item.icon} size={1} />
-              {!collapsed && <span>&nbsp; {item.title}</span>} */}
-              <div className="w-7 h-7 flex items-center justify-center flex-shrink-0">
-                <Icon path={item.icon} size={1} />
-              </div>
-              {!collapsed && <span className="ml-2">{item.title}</span>}
-            </Link>
-          </li>
-            );
-          })()
-        ))}
+              <Link
+                to={item.path}
+                style={{ display: "flex", alignItems: "center" }}
+              >
+                {/* <Icon path={item.icon} size={1} />
+                {!collapsed && <span>&nbsp; {item.title}</span>} */}
+                <div className="w-7 h-7 flex items-center justify-center flex-shrink-0">
+                  <Icon path={item.icon} size={1} />
+                </div>
+                {!collapsed && <span className="ml-2">{item.title}</span>}
+              </Link>
+            </li>
+          );
+        })}
       </ul>
     </div>
   );

@@ -216,7 +216,6 @@ const ExperimentalOCR: React.FC = () => {
 
     try {
       await axios.delete(`./api/documents/${documentId}/ocr_pages/${pageIdx}/reocr`);
-      console.log(`Cancellation request sent for page ${pageIdx}`);
     } catch (err) {
       console.error(`Failed to send cancellation request for page ${pageIdx}:`, err);
     }

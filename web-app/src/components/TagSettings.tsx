@@ -24,7 +24,6 @@ export default function TagSettings() {
         const settingsData = (response.data?.settings ?? response.data ?? {}) as SettingsData;
         setSettings(settingsData);
         setInitialSettings(settingsData);
-        setLoading(false);
       } catch (err) {
         console.error('Error fetching settings:', err);
         setError('Failed to load settings');

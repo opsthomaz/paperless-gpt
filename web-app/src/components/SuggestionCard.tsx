@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { ReactTags } from "react-tag-autocomplete";
 import { DocumentSuggestion, TagOption } from "../DocumentProcessor";
 
@@ -27,7 +27,12 @@ const SuggestionCard: React.FC<SuggestionCardProps> = ({
   onSummaryChange,
   onCustomFieldSuggestionToggle,
 }) => {
-  const sortedAvailableTags = availableTags.sort((a, b) => a.name.localeCompare(b.name));
+  // Spread before sort to avoid mutating the prop array; memoize so it only
+  // re-runs when the availableTags reference changes, not on every render.
+  const sortedAvailableTags = useMemo(
+    () => [...availableTags].sort((a, b) => a.name.localeCompare(b.name)),
+    [availableTags]
+  );
   const document = suggestion.original_document;
   return (
     <div className="bg-white dark:bg-gray-800 shadow-lg shadow-blue-500/50 rounded-md p-4 relative flex flex-col justify-between h-full">
