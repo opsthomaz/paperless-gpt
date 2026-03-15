@@ -9,6 +9,7 @@ export type StatusViewOptions = {
 
 export const mapJobStatus = (raw: string | null | undefined): OCRJobStatus => {
   switch (raw) {
+    case 'idle':
     case 'pending':
     case 'in_progress':
     case 'completed':

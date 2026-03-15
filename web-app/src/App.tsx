@@ -40,7 +40,7 @@ const App: React.FC = () => {
     <Router basename={basename}>
       <div className="flex h-screen flex-col">
         <div className="flex flex-1 overflow-hidden">
-          <Sidebar onSelectPage={(page) => console.log(page)} />
+          <Sidebar />
           <div className="flex flex-1 flex-col overflow-y-auto">
             <div className="flex-1">
               <Routes>

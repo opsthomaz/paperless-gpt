@@ -135,7 +135,8 @@ func (app *App) updateSettingsHandler(c *gin.Context) {
 	settingsMutex.Lock()
 	defer settingsMutex.Unlock()
 
-	var newSettings Settings
+	// Start from current settings so partial payloads don't zero-out other fields
+	newSettings := settings
 	if err := c.ShouldBindJSON(&newSettings); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request payload"})
 		return

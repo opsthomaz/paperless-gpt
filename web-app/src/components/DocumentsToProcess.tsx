@@ -11,6 +11,8 @@ export interface DocumentsToProcessProps {
   setGenerateTags?: React.Dispatch<React.SetStateAction<boolean>>;
   generateCorrespondents?: boolean;
   setGenerateCorrespondents?: React.Dispatch<React.SetStateAction<boolean>>;
+  generateDocumentTypes?: boolean;
+  setGenerateDocumentTypes?: React.Dispatch<React.SetStateAction<boolean>>;
   generateCreatedDate?: boolean;
   setGenerateCreatedDate?: React.Dispatch<React.SetStateAction<boolean>>;
   generateCustomFields?: boolean;
@@ -22,7 +24,7 @@ export interface DocumentsToProcessProps {
   onReload: () => void;
   selectedDocuments?: number[];
   onSelectDocument?: (documentId: number) => void;
-  gridCols?: string;
+  gridCols?: '2' | '3';
 }
 
 const DocumentsToProcess: React.FC<DocumentsToProcessProps> = ({
@@ -33,6 +35,8 @@ const DocumentsToProcess: React.FC<DocumentsToProcessProps> = ({
   setGenerateTags,
   generateCorrespondents,
   setGenerateCorrespondents,
+  generateDocumentTypes,
+  setGenerateDocumentTypes,
   generateCreatedDate,
   setGenerateCreatedDate,
   generateCustomFields,
@@ -45,8 +49,10 @@ const DocumentsToProcess: React.FC<DocumentsToProcessProps> = ({
   selectedDocuments,
   onSelectDocument,
   gridCols = "2",
-}) => (
-  <section>
+}) => {
+  const gridColsClass = gridCols === '3' ? 'md:grid-cols-3' : 'md:grid-cols-2';
+  return (
+    <section>
     <div className="flex justify-between items-center mb-6">
       <h2 className="text-2xl font-semibold text-gray-700 dark:text-gray-200">Documents to Process</h2>
       <div className="flex space-x-2">
@@ -103,6 +109,17 @@ const DocumentsToProcess: React.FC<DocumentsToProcessProps> = ({
           <span className="text-gray-700 dark:text-gray-200">Generate Correspondents</span>
         </label>
       )}
+      {setGenerateDocumentTypes && generateDocumentTypes !== undefined && (
+        <label className="flex items-center space-x-2">
+          <input
+            type="checkbox"
+            checked={generateDocumentTypes}
+            onChange={(e) => setGenerateDocumentTypes(e.target.checked)}
+            className="dark:bg-gray-700 dark:border-gray-600"
+          />
+          <span className="text-gray-700 dark:text-gray-200">Generate Document Types</span>
+        </label>
+      )}
       {setGenerateCreatedDate && generateCreatedDate !== undefined && (
         <label className="flex items-center space-x-2">
           <input
@@ -138,7 +155,7 @@ const DocumentsToProcess: React.FC<DocumentsToProcessProps> = ({
       )}
     </div>
 
-    <div className={`grid grid-cols-1 md:grid-cols-${gridCols} gap-4`}>
+    <div className={`grid grid-cols-1 ${gridColsClass} gap-4`}>
       {documents.map((doc) => (
         <DocumentCard
           key={doc.id}
@@ -148,7 +165,8 @@ const DocumentsToProcess: React.FC<DocumentsToProcessProps> = ({
         />
       ))}
     </div>
-  </section>
-);
+    </section>
+  );
+};
 
 export default DocumentsToProcess;

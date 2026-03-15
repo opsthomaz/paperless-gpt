@@ -89,8 +89,8 @@ const SuggestionCard: React.FC<SuggestionCardProps> = ({
             }))}
             onAdd={(tag) =>
               onTagAddition(suggestion.id, {
-                id: String(tag.label),
-                name: String(tag.value),
+                id: String(tag.value),
+                name: String(tag.label),
               })
             }
             onDelete={(index) => onTagDeletion(suggestion.id, index)}
@@ -173,7 +173,7 @@ const SuggestionCard: React.FC<SuggestionCardProps> = ({
               Suggested Custom Fields
             </label>
             <div className="mt-2 space-y-2">
-              {suggestion.suggested_custom_fields?.map((field) => (
+              {suggestion.suggested_custom_fields.map((field) => (
                 <div key={field.id} className="flex items-center">
                   <input
                     type="checkbox"
@@ -186,7 +186,7 @@ const SuggestionCard: React.FC<SuggestionCardProps> = ({
                     <span className="font-semibold">{field.name}:</span> {String(field.value)}
                   </label>
                 </div>
-              )) || []}
+              ))}
             </div>
           </div>
         )}

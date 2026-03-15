@@ -1,12 +1,6 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
-
-interface SettingsData {
-  custom_fields_enable: boolean;
-  custom_fields_selected_ids: number[];
-  custom_fields_write_mode: 'append' | 'replace' | 'update';
-  tags_auto_create: boolean;
-}
+import { SettingsData } from './CustomFieldsEditor';
 
 export default function TagSettings() {
   const [settings, setSettings] = useState<SettingsData>({
@@ -27,7 +21,7 @@ export default function TagSettings() {
     const fetchSettings = async () => {
       try {
         const response = await axios.get('./api/settings');
-        const settingsData = response.data.settings as SettingsData;
+        const settingsData = (response.data?.settings ?? response.data ?? {}) as SettingsData;
         setSettings(settingsData);
         setInitialSettings(settingsData);
         setLoading(false);
@@ -57,6 +51,7 @@ export default function TagSettings() {
         tags_auto_create: settings.tags_auto_create
       });
       setMessage('Settings saved successfully');
+      setInitialSettings(settings);
       setTimeout(() => setMessage(''), 3000);
     } catch (err) {
       console.error('Error saving settings:', err);

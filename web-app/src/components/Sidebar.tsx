@@ -1,16 +1,12 @@
 import { mdiCogOutline, mdiHistory, mdiHomeOutline, mdiTextBoxSearchOutline, mdiFileChartOutline } from "@mdi/js";
 import { Icon } from "@mdi/react";
 import axios from "axios";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import logo from "../assets/logo.svg";
 import "./Sidebar.css";
 
-interface SidebarProps {
-  onSelectPage: (page: string) => void;
-}
-
-const Sidebar: React.FC<SidebarProps> = ({ onSelectPage }) => {
+const Sidebar: React.FC = () => {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
 
@@ -18,26 +14,16 @@ const Sidebar: React.FC<SidebarProps> = ({ onSelectPage }) => {
     setCollapsed(!collapsed);
   };
 
-  const handlePageClick = (page: string) => {
-    onSelectPage(page);
-  };
-
   // Get whether experimental OCR is enabled
   const [ocrEnabled, setOcrEnabled] = useState(false);
-  const fetchOcrEnabled = useCallback(async () => {
-    try {
-      const res = await axios.get<{ enabled: boolean }>(
-        "./api/experimental/ocr"
-      );
-      setOcrEnabled(res.data.enabled);
-    } catch (err) {
-      console.error(err);
-    }
-  }, []);
 
   useEffect(() => {
-    fetchOcrEnabled();
-  }, [fetchOcrEnabled]);
+    let cancelled = false;
+    axios.get<{ enabled: boolean }>("./api/experimental/ocr")
+      .then((res) => { if (!cancelled) setOcrEnabled(res.data.enabled); })
+      .catch((err) => console.error(err));
+    return () => { cancelled = true; };
+  }, []);
 
   const menuItems = [
     { name: "home", path: "./", icon: mdiHomeOutline, title: "Home" },
@@ -81,11 +67,9 @@ const Sidebar: React.FC<SidebarProps> = ({ onSelectPage }) => {
           <li
             key={item.name}
             className={currentPathTail === itemPathTail ? "active" : ""}
-            onClick={() => handlePageClick(item.name)}
           >
             <Link
               to={item.path}
-              onClick={() => handlePageClick(item.name)}
               style={{ display: "flex", alignItems: "center" }}
             >
               {/* <Icon path={item.icon} size={1} />

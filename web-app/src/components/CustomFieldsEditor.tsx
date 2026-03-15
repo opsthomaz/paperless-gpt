@@ -6,7 +6,7 @@ interface CustomField {
   data_type: string;
 }
 
-interface SettingsData {
+export interface SettingsData {
   custom_fields_enable: boolean;
   custom_fields_selected_ids: number[];
   custom_fields_write_mode: 'append' | 'replace' | 'update';
@@ -82,7 +82,7 @@ const CustomFieldsEditor: React.FC = () => {
     setIsSaving(true);
     setError(null);
     try {
-      const latestRes = await fetch('/api/settings');
+      const latestRes = await fetch('./api/settings');
       const latestData = latestRes.ok ? await latestRes.json() : {};
       const latestRaw = (latestData?.settings ?? latestData ?? {}) as Partial<SettingsData>;
       
@@ -94,7 +94,7 @@ const CustomFieldsEditor: React.FC = () => {
       };
 
 
-      const response = await fetch('/api/settings', {
+      const response = await fetch('./api/settings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(mergedSettings),

@@ -29,7 +29,7 @@ export interface GenerateSuggestionsRequest {
 
 export interface CustomFieldSuggestion {
   id: number;
-  value: any;
+  value: string | number | boolean | null;
   name: string;
   isSelected: boolean;
 }
@@ -71,7 +71,7 @@ const DocumentProcessor: React.FC = () => {
   const [generateTitles, setGenerateTitles] = useState(true);
   const [generateTags, setGenerateTags] = useState(true);
   const [generateCorrespondents, setGenerateCorrespondents] = useState(true);
-  const [generateDocumentTypes] = useState(true);
+  const [generateDocumentTypes, setGenerateDocumentTypes] = useState(true);
   const [generateCreatedDate, setGenerateCreatedDate] = useState(true);
   const [generateCustomFields, setGenerateCustomFields] = useState(true);
   const [generateSummary, setGenerateSummary] = useState(true);
@@ -371,6 +371,8 @@ const DocumentProcessor: React.FC = () => {
           setGenerateTags={setGenerateTags}
           generateCorrespondents={generateCorrespondents}
           setGenerateCorrespondents={setGenerateCorrespondents}
+          generateDocumentTypes={generateDocumentTypes}
+          setGenerateDocumentTypes={setGenerateDocumentTypes}
           generateCreatedDate={generateCreatedDate}
           setGenerateCreatedDate={setGenerateCreatedDate}
           generateCustomFields={generateCustomFields}
