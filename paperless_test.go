@@ -898,7 +898,7 @@ func TestGetSimilarDocuments_ExcludesPaperlessGPTTags(t *testing.T) {
 		os.Setenv("MANUAL_TAG", originalManualTag)
 		os.Setenv("AUTO_TAG", originalAutoTag)
 	}()
-	
+
 	// Set the tag values and reinitialize the global variables
 	os.Setenv("MANUAL_TAG", "paperless-gpt")
 	os.Setenv("AUTO_TAG", "paperless-gpt-auto")
@@ -936,8 +936,8 @@ func TestGetSimilarDocuments_ExcludesPaperlessGPTTags(t *testing.T) {
 		json.NewEncoder(w).Encode(map[string]interface{}{
 			"results": []map[string]interface{}{
 				{"id": 1, "name": "regular-tag"},
-				{"id": 2, "name": "paperless-gpt"},       // manualTag
-				{"id": 3, "name": "paperless-gpt-auto"},  // autoTag
+				{"id": 2, "name": "paperless-gpt"},      // manualTag
+				{"id": 3, "name": "paperless-gpt-auto"}, // autoTag
 			},
 			"next": nil,
 		})
@@ -954,7 +954,7 @@ func TestGetSimilarDocuments_ExcludesPaperlessGPTTags(t *testing.T) {
 	assert.Contains(t, receivedQuery, "more_like_id=1")
 	assert.Contains(t, receivedQuery, "page_size=5")
 	// Check that tag exclusion is present (order may vary)
-	assert.True(t, 
+	assert.True(t,
 		strings.Contains(receivedQuery, "tags__id__none=2,3") || strings.Contains(receivedQuery, "tags__id__none=3,2"),
 		"Should exclude paperless-gpt tags with IDs 2 and 3 (in any order), got: %s", receivedQuery)
 }
@@ -967,7 +967,7 @@ func TestGetSimilarDocuments_NoPaperlessGPTTagsToExclude(t *testing.T) {
 		os.Setenv("MANUAL_TAG", originalManualTag)
 		os.Setenv("AUTO_TAG", originalAutoTag)
 	}()
-	
+
 	// Set the tag values and reinitialize the global variables
 	os.Setenv("MANUAL_TAG", "paperless-gpt")
 	os.Setenv("AUTO_TAG", "paperless-gpt-auto")

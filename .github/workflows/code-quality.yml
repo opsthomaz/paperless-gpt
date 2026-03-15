@@ -20,11 +20,18 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.22'
+          go-version-file: 'go.mod'
 
-      - name: Install golangci-lint
-        run: |
-          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.55.2
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: './web-app/package-lock.json'
+
+      - name: Build frontend (required for go:embed)
+        run: npm ci && npm run build
+        working-directory: ./web-app
 
       - name: Go Lint
         uses: golangci/golangci-lint-action@v4
@@ -56,7 +63,18 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.22'
+          go-version-file: 'go.mod'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: './web-app/package-lock.json'
+
+      - name: Build frontend (required for go:embed)
+        run: npm ci && npm run build
+        working-directory: ./web-app
 
       - name: Go Type Check
         run: go vet ./...
@@ -107,7 +125,18 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.22'
+          go-version-file: 'go.mod'
+
+      - name: Set up Node.js for frontend build
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: './web-app/package-lock.json'
+
+      - name: Build frontend (required for go:embed)
+        run: npm ci && npm run build
+        working-directory: ./web-app
 
       - name: Install mupdf
         run: sudo apt-get install -y mupdf
@@ -158,7 +187,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.22'
+          go-version-file: 'go.mod'
 
       - name: Check Go Formatting
         run: |
@@ -192,7 +221,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.22'
+          go-version-file: 'go.mod'
 
       - name: Install gocyclo
         run: go install github.com/fzipp/gocyclo/cmd/gocyclo@latest

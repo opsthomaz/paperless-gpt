@@ -16,11 +16,12 @@ func setupTestServer() (*httptest.Server, func()) {
 	origFilesEndpoint := mistralFilesEndpoint
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/v1/ocr" {
+		switch r.URL.Path {
+		case "/v1/ocr":
 			handleOCRRequest(w, r)
-		} else if r.URL.Path == "/v1/files" {
+		case "/v1/files":
 			handleFileUploadRequest(w, r)
-		} else if r.URL.Path == "/v1/files/test-file-id/url" {
+		case "/v1/files/test-file-id/url":
 			handleGetSignedURLRequest(w, r)
 		}
 	}))
@@ -35,7 +36,7 @@ func setupTestServer() (*httptest.Server, func()) {
 	}
 }
 
-func handleOCRRequest(w http.ResponseWriter, r *http.Request) {
+func handleOCRRequest(w http.ResponseWriter, _ *http.Request) {
 	resp := MistralOCRResponse{
 		Pages: []struct {
 			Index      int           `json:"index"`
@@ -102,7 +103,7 @@ func handleFileUploadRequest(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(resp)
 }
 
-func handleGetSignedURLRequest(w http.ResponseWriter, r *http.Request) {
+func handleGetSignedURLRequest(w http.ResponseWriter, _ *http.Request) {
 	resp := struct {
 		URL string `json:"url"`
 	}{
