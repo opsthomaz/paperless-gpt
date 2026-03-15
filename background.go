@@ -59,69 +59,68 @@ func withBackgroundDocumentTimeout(parent context.Context) (context.Context, con
 	return context.WithTimeout(parent, timeout)
 }
 
-// Start our background tasks in a goroutine
+// StartBackgroundTasks runs the background processing loop until ctx is cancelled.
+// It is a blocking call — callers should invoke it in a goroutine: go StartBackgroundTasks(ctx, app).
 func StartBackgroundTasks(ctx context.Context, app BackgroundProcessor) {
-	go func() {
-		minBackoffDuration := 10 * time.Second
-		maxBackoffDuration := time.Hour
-		pollingInterval := 10 * time.Second
+	minBackoffDuration := 10 * time.Second
+	maxBackoffDuration := time.Hour
+	pollingInterval := 10 * time.Second
 
-		backoffDuration := minBackoffDuration
+	backoffDuration := minBackoffDuration
 
-		for {
-			select {
-			case <-ctx.Done():
-				log.Infoln("Background tasks shutting down")
-				return
-			default: // needed to make this non-blocking
-			}
-
-			processedCount, err := func() (count int, err error) {
-				count = 0
-
-				// If OCR is enabled, run OCR tagging first
-				if app.isOcrEnabled() {
-					ocrCount, err := app.processAutoOcrTagDocuments(ctx)
-					if err != nil {
-						return 0, fmt.Errorf("error in processAutoOcrTagDocuments: %w", err)
-					}
-					count += ocrCount
-				}
-
-				// Run auto-tagging after OCR
-				// Only run auto-tagging if OCR did not find any documents to process, otherwise re-run OCR
-				if count == 0 {
-					autoCount, err := app.processAutoTagDocuments(ctx)
-					if err != nil {
-						return 0, fmt.Errorf("error in processAutoTagDocuments: %w", err)
-					}
-					count += autoCount
-				}
-
-				return count, nil
-			}()
-
-			if err != nil {
-				log.Errorf("Error in background tagging: %v", err)
-				time.Sleep(backoffDuration)
-
-				// Exponential backoff logic
-				backoffDuration *= 2
-				if backoffDuration > maxBackoffDuration {
-					log.Warnf("Max backoff duration reached. Using %v", maxBackoffDuration)
-					backoffDuration = maxBackoffDuration
-				}
-			} else {
-				// Reset backoff when processing succeeds
-				backoffDuration = minBackoffDuration
-			}
-
-			// If nothing was processed, pause before next cycle
-			if processedCount == 0 {
-				time.Sleep(pollingInterval)
-			}
+	for {
+		select {
+		case <-ctx.Done():
+			log.Infoln("Background tasks shutting down")
+			return
+		default: // needed to make this non-blocking
 		}
-	}()
+
+		processedCount, err := func() (count int, err error) {
+			count = 0
+
+			// If OCR is enabled, run OCR tagging first
+			if app.isOcrEnabled() {
+				ocrCount, err := app.processAutoOcrTagDocuments(ctx)
+				if err != nil {
+					return 0, fmt.Errorf("error in processAutoOcrTagDocuments: %w", err)
+				}
+				count += ocrCount
+			}
+
+			// Run auto-tagging after OCR
+			// Only run auto-tagging if OCR did not find any documents to process, otherwise re-run OCR
+			if count == 0 {
+				autoCount, err := app.processAutoTagDocuments(ctx)
+				if err != nil {
+					return 0, fmt.Errorf("error in processAutoTagDocuments: %w", err)
+				}
+				count += autoCount
+			}
+
+			return count, nil
+		}()
+
+		if err != nil {
+			log.Errorf("Error in background tagging: %v", err)
+			time.Sleep(backoffDuration)
+
+			// Exponential backoff logic
+			backoffDuration *= 2
+			if backoffDuration > maxBackoffDuration {
+				log.Warnf("Max backoff duration reached. Using %v", maxBackoffDuration)
+				backoffDuration = maxBackoffDuration
+			}
+		} else {
+			// Reset backoff when processing succeeds
+			backoffDuration = minBackoffDuration
+		}
+
+		// If nothing was processed, pause before next cycle
+		if processedCount == 0 {
+			time.Sleep(pollingInterval)
+		}
+	}
 }
 
 // classifyDocument generates classification suggestions for a single document.

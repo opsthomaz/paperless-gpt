@@ -371,7 +371,7 @@ func main() {
 	}
 
 	// Start Background-Tasks for Auto-Tagging and Auto-OCR (if enabled)
-	StartBackgroundTasks(ctx, app)
+	go StartBackgroundTasks(ctx, app)
 
 	// Create a Gin router with default middleware (logger and recovery)
 	router := gin.Default()
