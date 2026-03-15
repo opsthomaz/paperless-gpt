@@ -12,12 +12,11 @@ import (
 
 // RateLimitedLLM wraps an LLM client with rate limiting and retry capabilities
 type RateLimitedLLM struct {
-	llm          llms.Model
-	rateLimiter  *rate.Limiter
-	maxRetries   int
-	backoffMin   time.Duration
-	backoffMax   time.Duration
-	backoffScale float64
+	llm         llms.Model
+	rateLimiter *rate.Limiter
+	maxRetries  int
+	backoffMin  time.Duration
+	backoffMax  time.Duration
 }
 
 // Call implements the llms.Model interface
@@ -28,7 +27,6 @@ func (r *RateLimitedLLM) Call(ctx context.Context, prompt string, options ...llm
 		}
 	}
 
-	var lastErr error
 	attempt := 0
 
 	for {
@@ -39,10 +37,7 @@ func (r *RateLimitedLLM) Call(ctx context.Context, prompt string, options ...llm
 
 		// Check if we should retry
 		if attempt >= r.maxRetries {
-			if lastErr != nil {
-				return "", fmt.Errorf("all retry attempts failed, last error: %w", lastErr)
-			}
-			return "", err
+			return "", fmt.Errorf("all retry attempts failed, last error: %w", err)
 		}
 
 		// Calculate exponential backoff with jitter
@@ -59,7 +54,6 @@ func (r *RateLimitedLLM) Call(ctx context.Context, prompt string, options ...llm
 		case <-time.After(jitter):
 			// Continue with retry
 			attempt++
-			lastErr = err
 		}
 	}
 }
@@ -102,12 +96,11 @@ func NewRateLimitedLLM(llm llms.Model, config RateLimitConfig) *RateLimitedLLM {
 	}
 
 	return &RateLimitedLLM{
-		llm:          llm,
-		rateLimiter:  limiter,
-		maxRetries:   maxRetries,
-		backoffMin:   backoffMin,
-		backoffMax:   backoffMax,
-		backoffScale: 2.0, // Exponential backoff multiplier
+		llm:         llm,
+		rateLimiter: limiter,
+		maxRetries:  maxRetries,
+		backoffMin:  backoffMin,
+		backoffMax:  backoffMax,
 	}
 }
 
@@ -120,22 +113,17 @@ func (r *RateLimitedLLM) GenerateContent(ctx context.Context, messages []llms.Me
 		}
 	}
 
-	var lastErr error
 	attempt := 0
 
 	for {
 		resp, err := r.llm.GenerateContent(ctx, messages, options...)
 		if err == nil {
-			// Return the pointer response directly
 			return resp, nil
 		}
 
 		// Check if we should retry
 		if attempt >= r.maxRetries {
-			if lastErr != nil {
-				return nil, fmt.Errorf("all retry attempts failed, last error: %w", lastErr)
-			}
-			return nil, err
+			return nil, fmt.Errorf("all retry attempts failed, last error: %w", err)
 		}
 
 		// Calculate exponential backoff with jitter
@@ -152,7 +140,6 @@ func (r *RateLimitedLLM) GenerateContent(ctx context.Context, messages []llms.Me
 		case <-time.After(jitter):
 			// Continue with retry
 			attempt++
-			lastErr = err
 		}
 	}
 }

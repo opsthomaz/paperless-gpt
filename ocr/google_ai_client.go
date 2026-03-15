@@ -73,7 +73,8 @@ func (p *GoogleAIProvider) GenerateText(ctx context.Context, prompt string) (str
 	return "", fmt.Errorf("googleai GenerateContent API returned no non-thinking text parts")
 }
 
-// Close closes any resources held by the provider
+// Close is a no-op for GoogleAIProvider: the underlying HTTP client manages its
+// own connection pool and does not need explicit teardown.
 func (p *GoogleAIProvider) Close() error {
 	return nil
 }

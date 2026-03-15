@@ -641,14 +641,6 @@ func TestUpdateDocuments_RemovingLastTag(t *testing.T) {
 	}
 }
 
-// TestUrlEncode tests the urlEncode function
-func TestUrlEncode(t *testing.T) {
-	input := "tag:tag1 tag:tag2"
-	expected := "tag:tag1+tag:tag2"
-	result := urlEncode(input)
-	assert.Equal(t, expected, result)
-}
-
 // TestDownloadDocumentAsImages tests the DownloadDocumentAsImages method
 func TestDownloadDocumentAsImages(t *testing.T) {
 	env := newTestEnv(t)

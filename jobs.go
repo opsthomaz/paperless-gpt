@@ -48,14 +48,12 @@ var (
 )
 
 func init() {
-
 	// Initialize logger
 	logger.SetOutput(os.Stdout)
 	logger.SetFormatter(&logrus.TextFormatter{
 		FullTimestamp: true,
 	})
 	logger.SetLevel(logrus.InfoLevel)
-	logger.WithField("prefix", "OCR_JOB")
 }
 
 func generateJobID() string {

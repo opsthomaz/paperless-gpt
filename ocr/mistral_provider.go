@@ -386,10 +386,3 @@ func (p *MistralOCRProvider) processDocument(req MistralOCRRequest, logger *logr
 	return combinedText, nil
 }
 
-// Helper function for min (Go 1.21+ has this built-in)
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}

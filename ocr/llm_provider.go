@@ -184,6 +184,10 @@ func (p *LLMProvider) ProcessImage(ctx context.Context, imageContent []byte, pag
 		return nil, fmt.Errorf("error getting response from LLM: %w", err)
 	}
 
+	if len(completion.Choices) == 0 {
+		return nil, fmt.Errorf("LLM returned no completion choices")
+	}
+
 	text := textsanitize.StripReasoning(completion.Choices[0].Content)
 	limitHit := false
 	tokenCount := -1

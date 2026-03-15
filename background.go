@@ -323,7 +323,7 @@ func (app *App) processAutoOcrTagDocuments(ctx context.Context) (int, error) {
 			}(),
 		}
 
-		if (app.pdfOCRTagging) && app.pdfOCRCompleteTag != "" {
+		if app.pdfOCRTagging && app.pdfOCRCompleteTag != "" {
 			// Add the OCR complete tag if tagging is enabled
 			documentSuggestion.SuggestedTags = []string{app.pdfOCRCompleteTag}
 			documentSuggestion.KeepOriginalTags = true

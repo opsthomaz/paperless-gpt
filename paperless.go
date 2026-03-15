@@ -334,7 +334,7 @@ func (client *PaperlessClient) GetDocumentCountByTag(ctx context.Context, tag st
 		return 0, err
 	}
 
-	if tagsResponse.Count == 0 {
+	if tagsResponse.Count == 0 || len(tagsResponse.Results) == 0 {
 		return 0, nil
 	}
 
@@ -743,7 +743,11 @@ func (client *PaperlessClient) UpdateDocuments(ctx context.Context, documents []
 		if len(document.SuggestedCustomFields) > 0 {
 			log.Infof("Processing custom fields for document %d with mode: '%s'", documentID, document.CustomFieldsWriteMode)
 			finalCustomFields := slices.Clone(originalDoc.CustomFields)
-			originalCustomFieldsJSON, _ := json.Marshal(originalDoc.CustomFields)
+			originalCustomFieldsJSON, err := json.Marshal(originalDoc.CustomFields)
+			if err != nil {
+				log.Warnf("Document %d: failed to marshal original custom fields for comparison: %v", documentID, err)
+				originalCustomFieldsJSON = []byte("[]")
+			}
 
 			switch document.CustomFieldsWriteMode {
 			case "replace":
@@ -775,7 +779,11 @@ func (client *PaperlessClient) UpdateDocuments(ctx context.Context, documents []
 				}
 			}
 
-			finalCustomFieldsJSON, _ := json.Marshal(finalCustomFields)
+			finalCustomFieldsJSON, err := json.Marshal(finalCustomFields)
+			if err != nil {
+				log.Warnf("Document %d: failed to marshal final custom fields for comparison: %v", documentID, err)
+				finalCustomFieldsJSON = []byte("[]")
+			}
 			if string(originalCustomFieldsJSON) != string(finalCustomFieldsJSON) {
 				originalFields["custom_fields"] = string(originalCustomFieldsJSON)
 				updatedFields["custom_fields"] = finalCustomFields
@@ -1309,11 +1317,6 @@ func (client *PaperlessClient) GetCacheFolder() string {
 		client.CacheFolder = filepath.Join(os.TempDir(), "paperless-gpt")
 	}
 	return client.CacheFolder
-}
-
-// urlEncode encodes a string for safe URL usage
-func urlEncode(s string) string {
-	return strings.ReplaceAll(s, " ", "+")
 }
 
 // instantiateCorrespondent creates a new Correspondent object with default values

@@ -205,12 +205,12 @@ func (p *AzureProvider) pollForResults(ctx context.Context, operationLocation st
 			}
 
 			var result AzureDocumentResult
-			if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-				resp.Body.Close()
-				logger.WithError(err).Error("Failed to decode response")
-				return nil, fmt.Errorf("error decoding response: %w", err)
+			decodeErr := json.NewDecoder(resp.Body).Decode(&result)
+			resp.Body.Close() // close immediately — defer inside a loop leaks across iterations
+			if decodeErr != nil {
+				logger.WithError(decodeErr).Error("Failed to decode response")
+				return nil, fmt.Errorf("error decoding response: %w", decodeErr)
 			}
-			defer resp.Body.Close()
 
 			logger.WithFields(logrus.Fields{
 				"status_code":    resp.StatusCode,

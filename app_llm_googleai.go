@@ -116,11 +116,6 @@ func (p *GoogleAIProvider) Call(ctx context.Context, prompt string, opts ...llms
 	return p.GenerateText(ctx, prompt)
 }
 
-// IsGoogleAIProvider returns true for this provider
-func (p *GoogleAIProvider) IsGoogleAIProvider() bool {
-	return true
-}
-
 // ProviderName returns the provider name
 func (p *GoogleAIProvider) ProviderName() string {
 	return "googleai"

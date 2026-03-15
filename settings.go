@@ -41,7 +41,7 @@ func loadSettings() {
 			CustomFieldsEnable:      os.Getenv("ENABLE_AUTO_CUSTOM_FIELDS") == "true",
 			CustomFieldsSelectedIDs: []int{},
 			CustomFieldsWriteMode:   "append",
-			TagsAutoCreate:          false, // Adicionado aqui
+			TagsAutoCreate:          false,
 		}
 	}
 
@@ -66,7 +66,7 @@ func loadSettings() {
 		return
 	}
 
-	// Garante que o array nunca seja nulo (evita retornar 'null' no JSON para o frontend)
+	// Ensure the slice is never nil so the JSON response returns [] instead of null
 	if settings.CustomFieldsSelectedIDs == nil {
 		settings.CustomFieldsSelectedIDs = []int{}
 	}

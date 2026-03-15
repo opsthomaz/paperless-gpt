@@ -51,7 +51,7 @@ var (
 	openaiAPIKey                  = os.Getenv("OPENAI_API_KEY")
 	manualTag                     = os.Getenv("MANUAL_TAG")
 	autoTag                       = os.Getenv("AUTO_TAG")
-	manualOcrTag                  = os.Getenv("MANUAL_OCR_TAG") // Not used yet
+	manualOcrTag                  = os.Getenv("MANUAL_OCR_TAG")
 	autoOcrTag                    = os.Getenv("AUTO_OCR_TAG")
 	ocrProcessMode                = os.Getenv("OCR_PROCESS_MODE")
 	llmProvider                   = os.Getenv("LLM_PROVIDER")
@@ -796,7 +796,7 @@ func validateOrDefaultEnvVars() {
 	// Log OCR feature settings
 	ocrProviderEnv := os.Getenv("OCR_PROVIDER")
 	if ocrProviderEnv != "" {
-		log.Infof("OCR provider: %s", os.Getenv("OCR_PROVIDER"))
+		log.Infof("OCR provider: %s", ocrProviderEnv)
 
 		if createLocalHOCR {
 			log.Infof("hOCR file creation is enabled, output path: %s", localHOCRPath)
@@ -1058,18 +1058,8 @@ func createLLM() (llms.Model, error) {
 		// Apply rate limiting with isVision=false
 		return NewRateLimitedLLM(llm, getRateLimitConfig(false)), nil
 	case "googleai":
-		ctx := context.Background()
-		apiKey := os.Getenv("GOOGLEAI_API_KEY")
-		var thinkingBudget *int32
-		if val, ok := os.LookupEnv("GOOGLEAI_THINKING_BUDGET"); ok {
-			if v, err := strconv.ParseInt(val, 10, 32); err == nil {
-				if v >= math.MinInt32 && v <= math.MaxInt32 {
-					b := int32(v)
-					thinkingBudget = &b
-				}
-			}
-		}
-		provider, err := NewGoogleAIProvider(ctx, llmModel, apiKey, thinkingBudget)
+		// googleThinkingBudget is parsed once in validateOrDefaultEnvVars and reused here
+		provider, err := NewGoogleAIProvider(context.Background(), llmModel, os.Getenv("GOOGLEAI_API_KEY"), googleThinkingBudget)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create GoogleAI provider: %w", err)
 		}
@@ -1229,11 +1219,9 @@ func createCustomHTTPClient() *http.Client {
 		},
 	}
 
-	// Create custom client with the transport
-	httpClient := http.DefaultClient
-	httpClient.Transport = customTransport
-
-	return httpClient
+	// Return a new client — do NOT assign to http.DefaultClient,
+	// which is a shared global and would affect all other callers.
+	return &http.Client{Transport: customTransport}
 }
 
 // headerTransport is a custom http.RoundTripper that adds custom headers to requests

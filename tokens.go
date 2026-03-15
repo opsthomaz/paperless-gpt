@@ -52,7 +52,7 @@ func getTokenCount(content string) (int, error) {
 
 // truncateContentByTokens truncates the content so that its token count does not exceed availableTokens.
 // This implementation uses a binary search on runes to find the longest prefix whose token count is within the limit.
-// If availableTokens is 0 or negative, the original content is returned.
+// If availableTokens is negative, or the global token limit is disabled, the original content is returned unchanged.
 func truncateContentByTokens(content string, availableTokens int) (string, error) {
 	if availableTokens < 0 || tokenLimit <= 0 {
 		return content, nil

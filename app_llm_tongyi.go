@@ -72,9 +72,7 @@ func (p *TongyiProvider) GenerateText(ctx context.Context, prompt string) (strin
 		return "", fmt.Errorf("failed to create request: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
-	if p.apiKey != "" {
-		req.Header.Set("Authorization", "Bearer "+p.apiKey)
-	}
+	req.Header.Set("Authorization", "Bearer "+p.apiKey)
 
 	resp, err := p.client.Do(req)
 	if err != nil {
@@ -94,7 +92,10 @@ func (p *TongyiProvider) GenerateText(ctx context.Context, prompt string) (strin
 
 	// Try to extract text from common locations in the response
 	if choices, ok := data["choices"].([]interface{}); ok && len(choices) > 0 {
-		first := choices[0].(map[string]interface{})
+		first, ok := choices[0].(map[string]interface{})
+		if !ok {
+			return "", fmt.Errorf("unexpected type for choices[0] in Tongyi response")
+		}
 
 		// 1) message.content -> array of {type,text}
 		if message, ok := first["message"].(map[string]interface{}); ok {

@@ -607,6 +607,7 @@ func (app *App) generateDocumentSuggestions(ctx context.Context, suggestionReque
 			startTime := time.Now()
 			docLogger.Printf("Processing Document ID %d...", documentID)
 
+			var err error // local to this goroutine — avoids a data race on the outer err
 			content := sanitize.Sanitize(doc.Content)
 			suggestedTitle := doc.Title
 			var suggestedTags []string

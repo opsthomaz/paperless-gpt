@@ -365,7 +365,9 @@ func (app *App) getOCRPagesHandler(c *gin.Context) {
 	for _, res := range dbResults {
 		var genInfo map[string]interface{}
 		if res.GenerationInfo != "" {
-			_ = json.Unmarshal([]byte(res.GenerationInfo), &genInfo)
+			if err := json.Unmarshal([]byte(res.GenerationInfo), &genInfo); err != nil {
+				log.Warnf("Failed to parse GenerationInfo for OCR result (document %d): %v", parsedID, err)
+			}
 		}
 		pages = append(pages, OCRPageResult{
 			Text:           res.Text,

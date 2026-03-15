@@ -76,13 +76,6 @@ func GetModification(db *gorm.DB, id uint) (*ModificationHistory, error) {
 	return &record, result.Error
 }
 
-// GetAllModifications retrieves all modification records from the database (deprecated - use GetPaginatedModifications instead)
-func GetAllModifications(db *gorm.DB) ([]ModificationHistory, error) {
-	var records []ModificationHistory
-	result := db.Order("date_changed DESC").Find(&records)
-	return records, result.Error
-}
-
 // GetPaginatedModifications retrieves a page of modification records with total count
 func GetPaginatedModifications(db *gorm.DB, page int, pageSize int) ([]ModificationHistory, int64, error) {
 	var records []ModificationHistory
@@ -129,33 +122,28 @@ func SaveSingleOcrPageResultWithContext(ctx context.Context, db *gorm.DB, docID 
 		result.OcrLimitHit = ocrLimitHit
 		result.GenerationInfo = generationInfoJSON
 		return db.Save(&result).Error
-	} else if tx.Error != nil {
-		log.Debugf("SaveSingleOcrPageResult: db.First error: %v (is gorm.ErrRecordNotFound: %v)", tx.Error, errors.Is(tx.Error, gorm.ErrRecordNotFound))
-		if errors.Is(tx.Error, gorm.ErrRecordNotFound) {
-			result = OCRPageResult{
-				DocumentID:     docID,
-				PageIndex:      pageIdx,
-				Text:           text,
-				OcrLimitHit:    ocrLimitHit,
-				GenerationInfo: generationInfoJSON,
-			}
-			return db.Create(&result).Error
-		} else {
-			log.Errorf("Unexpected DB error in SaveSingleOcrPageResult: %v", tx.Error)
-			return tx.Error
-		}
 	}
-	return nil
+
+	log.Debugf("SaveSingleOcrPageResult: db.First error: %v (is gorm.ErrRecordNotFound: %v)", tx.Error, errors.Is(tx.Error, gorm.ErrRecordNotFound))
+	if errors.Is(tx.Error, gorm.ErrRecordNotFound) {
+		result = OCRPageResult{
+			DocumentID:     docID,
+			PageIndex:      pageIdx,
+			Text:           text,
+			OcrLimitHit:    ocrLimitHit,
+			GenerationInfo: generationInfoJSON,
+		}
+		return db.Create(&result).Error
+	}
+
+	log.Errorf("Unexpected DB error in SaveSingleOcrPageResult: %v", tx.Error)
+	return tx.Error
 }
 
 func GetOcrPageResults(db *gorm.DB, docID int) ([]OCRPageResult, error) {
 	var results []OCRPageResult
 	tx := db.Where("document_id = ?", docID).Order("page_index ASC").Find(&results)
 	return results, tx.Error
-}
-
-func UpdateOcrPageResult(db *gorm.DB, docID int, pageIdx int, text string, ocrLimitHit bool, generationInfoJSON string) error {
-	return SaveSingleOcrPageResult(db, docID, pageIdx, text, ocrLimitHit, generationInfoJSON)
 }
 
 func DeleteOcrPageResults(db *gorm.DB, docID int) error {
