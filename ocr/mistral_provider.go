@@ -385,4 +385,3 @@ func (p *MistralOCRProvider) processDocument(req MistralOCRRequest, logger *logr
 	logger.WithField("combined_text_length", len(combinedText)).Info("Successfully extracted text")
 	return combinedText, nil
 }
-
