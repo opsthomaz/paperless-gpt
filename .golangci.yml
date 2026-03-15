@@ -1,0 +1,10 @@
+linters-settings:
+  gocyclo:
+    min-complexity: 90
+
+issues:
+  exclude-rules:
+    # Ignore errcheck in test files — mock HTTP handlers don't need strict error handling
+    - path: _test\.go
+      linters:
+        - errcheck

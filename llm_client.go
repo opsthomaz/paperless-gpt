@@ -32,7 +32,7 @@ func (r *RateLimitedLLM) Call(ctx context.Context, prompt string, options ...llm
 	attempt := 0
 
 	for {
-		response, err := r.llm.Call(ctx, prompt, options...)
+		response, err := r.llm.Call(ctx, prompt, options...) //nolint:staticcheck
 		if err == nil {
 			return response, nil
 		}

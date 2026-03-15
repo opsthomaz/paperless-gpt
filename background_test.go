@@ -180,7 +180,7 @@ func setupTestCase(tc interface{}, env *testEnv) {
 			},
 		}
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(response)
+		_ = json.NewEncoder(w).Encode(response) //nolint:errcheck
 	})
 
 	// Mock the GetDocumentsByTag response
@@ -211,20 +211,20 @@ func setupTestCase(tc interface{}, env *testEnv) {
 			}
 		}
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(response)
+		_ = json.NewEncoder(w).Encode(response) //nolint:errcheck
 	})
 
 	// Mock the correspondent creation endpoint
 	env.setMockResponse("/api/correspondents/", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "POST" {
 			w.WriteHeader(http.StatusCreated)
-			json.NewEncoder(w).Encode(map[string]interface{}{
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{ //nolint:errcheck
 				"id":   3,
 				"name": "test response",
 			})
 		} else {
 			w.WriteHeader(http.StatusOK)
-			json.NewEncoder(w).Encode(map[string]interface{}{
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{ //nolint:errcheck
 				"results": []map[string]interface{}{
 					{"id": 1, "name": "Alpha"},
 					{"id": 2, "name": "Beta"},
@@ -268,7 +268,7 @@ func TestBackgroundTasks_ShutdownOnContextCancel(t *testing.T) {
 				OriginalFileName: "test.pdf",
 			}
 			w.WriteHeader(http.StatusOK)
-			json.NewEncoder(w).Encode(response)
+			_ = json.NewEncoder(w).Encode(response) //nolint:errcheck
 			return
 		}
 
@@ -280,7 +280,7 @@ func TestBackgroundTasks_ShutdownOnContextCancel(t *testing.T) {
 				return
 			}
 			w.WriteHeader(http.StatusOK)
-			json.NewEncoder(w).Encode(map[string]interface{}{
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{ //nolint:errcheck
 				"id":      1,
 				"title":   "Test Doc",
 				"content": "test ocr",
@@ -293,7 +293,7 @@ func TestBackgroundTasks_ShutdownOnContextCancel(t *testing.T) {
 	// Mock document download
 	env.setMockResponse("/api/documents/1/download/", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("%PDF-1.4\n%test pdf content"))
+		_, _ = w.Write([]byte("%PDF-1.4\n%test pdf content")) //nolint:errcheck
 	})
 
 	// Create stub app without base App for background test

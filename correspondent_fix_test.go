@@ -36,7 +36,7 @@ func TestCreateOrGetCorrespondentWithValidMatchingAlgorithm(t *testing.T) {
 	// Set mock response for getting existing correspondents (none found)
 	env.setMockResponse("/api/correspondents/", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"results": []}`))
+		_, _ = w.Write([]byte(`{"results": []}`)) //nolint:errcheck
 	})
 
 	// Mock the POST request for creating a new correspondent
@@ -63,11 +63,11 @@ func TestCreateOrGetCorrespondentWithValidMatchingAlgorithm(t *testing.T) {
 				"matching_algorithm": 1,
 			}
 			w.WriteHeader(http.StatusCreated)
-			json.NewEncoder(w).Encode(response)
+			_ = json.NewEncoder(w).Encode(response) //nolint:errcheck
 		} else {
 			// Handle GET request (list existing correspondents)
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(`{"results": []}`))
+			_, _ = w.Write([]byte(`{"results": []}`)) //nolint:errcheck
 		}
 	})
 

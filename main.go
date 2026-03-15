@@ -27,6 +27,8 @@ import (
 	"github.com/tmc/langchaingo/llms/mistral"
 	"github.com/tmc/langchaingo/llms/ollama"
 	"github.com/tmc/langchaingo/llms/openai"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 	"gorm.io/gorm"
 )
 
@@ -97,7 +99,6 @@ var (
 	customFieldTemplate   *template.Template
 	summaryTemplate       *template.Template
 	ocrTemplate           *template.Template
-	adhocAnalysisTemplate *template.Template
 	templateMutex         sync.RWMutex
 
 	// Server-side settings
@@ -850,7 +851,7 @@ func getLikelyLanguage() string {
 	if likelyLanguage == "" {
 		likelyLanguage = "English"
 	}
-	return strings.Title(strings.ToLower(likelyLanguage))
+	return cases.Title(language.Und).String(strings.ToLower(likelyLanguage))
 }
 
 // loadTemplates loads templates from files, copying from defaults if they don't exist
@@ -932,10 +933,6 @@ func loadTemplates() error {
 		return err
 	}
 	ocrTemplate, err = loadTemplate("ocr_prompt.tmpl")
-	if err != nil {
-		return err
-	}
-	adhocAnalysisTemplate, err = loadTemplate("adhoc-analysis_prompt.tmpl")
 	if err != nil {
 		return err
 	}

@@ -59,19 +59,19 @@ func newTestEnv(t *testing.T) *testEnv {
 	// Add mock response for /api/correspondents/
 	env.setMockResponse("/api/correspondents/", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"results": [{"id": 1, "name": "Alpha"}, {"id": 2, "name": "Beta"}]}`))
+		_, _ = w.Write([]byte(`{"results": [{"id": 1, "name": "Alpha"}, {"id": 2, "name": "Beta"}]}`)) //nolint:errcheck
 	})
 
 	// Add mock response for /api/document_types/
 	env.setMockResponse("/api/document_types/", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"results": []}`))
+		_, _ = w.Write([]byte(`{"results": []}`)) //nolint:errcheck
 	})
 
 	// Add mock response for /api/custom_fields/
 	env.setMockResponse("/api/custom_fields/", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"results": []}`))
+		_, _ = w.Write([]byte(`{"results": []}`)) //nolint:errcheck
 	})
 
 	return env
@@ -126,7 +126,7 @@ func TestDo(t *testing.T) {
 		assert.Equal(t, "GET", r.Method)
 		// Send a mock response
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"message": "success"}`))
+		_, _ = w.Write([]byte(`{"message": "success"}`)) //nolint:errcheck
 	})
 
 	ctx := context.Background()
@@ -166,10 +166,10 @@ func TestGetAllTags(t *testing.T) {
 		query := r.URL.Query().Get("page")
 		if query == "2" {
 			w.WriteHeader(http.StatusOK)
-			json.NewEncoder(w).Encode(page2)
+			_ = json.NewEncoder(w).Encode(page2) //nolint:errcheck
 		} else {
 			w.WriteHeader(http.StatusOK)
-			json.NewEncoder(w).Encode(page1)
+			_ = json.NewEncoder(w).Encode(page1) //nolint:errcheck
 		}
 	})
 
@@ -209,10 +209,10 @@ func TestGetDocumentCountByTag(t *testing.T) {
 		query := r.URL.Query().Get("name__iexact")
 		if query == "available" {
 			w.WriteHeader(http.StatusOK)
-			json.NewEncoder(w).Encode(data1)
+			_ = json.NewEncoder(w).Encode(data1) //nolint:errcheck
 		} else {
 			w.WriteHeader(http.StatusOK)
-			json.NewEncoder(w).Encode(data2)
+			_ = json.NewEncoder(w).Encode(data2) //nolint:errcheck
 		}
 	})
 
@@ -277,18 +277,18 @@ func TestGetDocumentsByTag(t *testing.T) {
 		expectedQuery := "tags__name__iexact=tag2&page_size=25"
 		assert.Equal(t, expectedQuery, r.URL.RawQuery)
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(documentsResponse)
+		_ = json.NewEncoder(w).Encode(documentsResponse) //nolint:errcheck
 	})
 
 	env.setMockResponse("/api/tags/", func(w http.ResponseWriter, r *http.Request) {
 		// Handle GetDocumentCountByTag call
 		if nameFilter := r.URL.Query().Get("name__iexact"); nameFilter != "" {
 			w.WriteHeader(http.StatusOK)
-			json.NewEncoder(w).Encode(tagsExactResponse)
+			_ = json.NewEncoder(w).Encode(tagsExactResponse) //nolint:errcheck
 		} else {
 			// Handle GetAllTags call
 			w.WriteHeader(http.StatusOK)
-			json.NewEncoder(w).Encode(tagsResponse)
+			_ = json.NewEncoder(w).Encode(tagsResponse) //nolint:errcheck
 		}
 	})
 
@@ -360,7 +360,7 @@ func TestGetDocumentsByTagWithEmoji(t *testing.T) {
 		expectedQuery := fmt.Sprintf("tags__name__iexact=%s&page_size=25", url.QueryEscape("🤖 AI-Queue"))
 		assert.Equal(t, expectedQuery, r.URL.RawQuery)
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(documentsResponse)
+		_ = json.NewEncoder(w).Encode(documentsResponse) //nolint:errcheck
 	})
 
 	env.setMockResponse("/api/tags/", func(w http.ResponseWriter, r *http.Request) {
@@ -369,11 +369,11 @@ func TestGetDocumentsByTagWithEmoji(t *testing.T) {
 			// Verify the decoded value matches our emoji tag
 			assert.Equal(t, "🤖 AI-Queue", nameFilter)
 			w.WriteHeader(http.StatusOK)
-			json.NewEncoder(w).Encode(tagsExactResponse)
+			_ = json.NewEncoder(w).Encode(tagsExactResponse) //nolint:errcheck
 		} else {
 			// Handle GetAllTags call
 			w.WriteHeader(http.StatusOK)
-			json.NewEncoder(w).Encode(tagsResponse)
+			_ = json.NewEncoder(w).Encode(tagsResponse) //nolint:errcheck
 		}
 	})
 
@@ -414,7 +414,7 @@ func TestDownloadPDF(t *testing.T) {
 	downloadPath := fmt.Sprintf("/api/documents/%d/download/", document.ID)
 	env.setMockResponse(downloadPath, func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		w.Write(pdfContent)
+		_, _ = w.Write(pdfContent) //nolint:errcheck
 	})
 
 	ctx := context.Background()
@@ -667,7 +667,7 @@ func TestDownloadDocumentAsImages(t *testing.T) {
 	downloadPath := fmt.Sprintf("/api/documents/%d/download/", document.ID)
 	env.setMockResponse(downloadPath, func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		w.Write(pdfContent)
+		_, _ = w.Write(pdfContent) //nolint:errcheck
 	})
 
 	ctx := context.Background()
@@ -704,7 +704,7 @@ func TestDownloadDocumentAsImages_ManyPages(t *testing.T) {
 	downloadPath := fmt.Sprintf("/api/documents/%d/download/", document.ID)
 	env.setMockResponse(downloadPath, func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		w.Write(pdfContent)
+		_, _ = w.Write(pdfContent) //nolint:errcheck
 	})
 
 	ctx := context.Background()
@@ -743,7 +743,7 @@ func TestDownloadDocumentAsPDF(t *testing.T) {
 	downloadPath := fmt.Sprintf("/api/documents/%d/download/", documentID)
 	env.setMockResponse(downloadPath, func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		w.Write(pdfContent)
+		_, _ = w.Write(pdfContent) //nolint:errcheck
 	})
 
 	ctx := context.Background()
@@ -863,7 +863,7 @@ func TestGetSimilarDocuments_Error(t *testing.T) {
 
 	env.mockResponses["/api/documents/"] = func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Internal Server Error"))
+		_, _ = w.Write([]byte("Internal Server Error")) //nolint:errcheck
 	}
 
 	ctx := context.Background()
@@ -880,7 +880,7 @@ func TestGetSimilarDocuments_TagsError(t *testing.T) {
 	// Mock tags endpoint to return an error
 	env.setMockResponse("/api/tags/", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Tags API Error"))
+		_, _ = w.Write([]byte("Tags API Error")) //nolint:errcheck
 	})
 
 	ctx := context.Background()

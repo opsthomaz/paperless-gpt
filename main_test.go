@@ -19,11 +19,7 @@ type TestDocument struct {
 
 // Use this for TestCases in your tests
 type TestCase struct {
-	name           string
-	documents      []TestDocument
-	expectedCount  int
-	expectedError  string
-	updateResponse int // HTTP status code for update response
+	documents []TestDocument
 }
 
 // Test our HTTP-Client

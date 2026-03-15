@@ -168,7 +168,6 @@ func (app *App) ProcessDocumentOCR(ctx context.Context, documentID int, options 
 	var originalPDFData []byte
 	var totalPdfPages int
 	var imagePaths []string
-	var ocrResults []*ocr.OCRResult
 
 	// Default process mode to app's ocrProcessMode if not set in options
 	processMode = options.ProcessMode
@@ -347,7 +346,6 @@ func (app *App) ProcessDocumentOCR(ctx context.Context, documentID int, options 
 				Debug("OCR completed for page")
 
 			ocrTexts = append(ocrTexts, result.Text)
-			ocrResults = append(ocrResults, result)
 
 			var genInfoJSON string
 			if result.GenerationInfo != nil {

@@ -49,11 +49,14 @@ check_vet() {
 
 check_lint() {
   build_frontend
-  if ! command -v golangci-lint &>/dev/null; then
+  local lint_bin
+  lint_bin=$(command -v golangci-lint 2>/dev/null || echo "$(go env GOPATH)/bin/golangci-lint")
+  if [ ! -x "$lint_bin" ]; then
     echo -e "$INFO Installing golangci-lint..."
     go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+    lint_bin="$(go env GOPATH)/bin/golangci-lint"
   fi
-  run_check "golangci-lint" golangci-lint run --timeout=5m
+  run_check "golangci-lint" "$lint_bin" run --timeout=5m
 }
 
 check_complexity() {
@@ -99,6 +102,7 @@ case "${1:-all}" in
   all)
     check_fmt
     check_vet
+    check_lint
     check_complexity
     check_fe_lint
     check_fe_types

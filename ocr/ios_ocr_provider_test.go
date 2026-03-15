@@ -82,7 +82,7 @@ func TestIOSOCRProvider_ProcessImage(t *testing.T) {
 		assert.Contains(t, r.Header.Get("Content-Type"), "multipart/form-data")
 
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(mockResponse)
+		_ = json.NewEncoder(w).Encode(mockResponse) //nolint:errcheck
 	}))
 	defer server.Close()
 
@@ -138,7 +138,7 @@ func TestIOSOCRProvider_ProcessImage_ErrorHandling(t *testing.T) {
 					Message: "Processing failed",
 				}
 				w.WriteHeader(http.StatusOK)
-				json.NewEncoder(w).Encode(response)
+				_ = json.NewEncoder(w).Encode(response) //nolint:errcheck
 			},
 			expectError:   true,
 			errorContains: "iOS-OCR-Server processing failed",
