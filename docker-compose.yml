@@ -11,8 +11,6 @@ services:
       # Find your user's ID with `id -u` and group ID with `id -g`.
       - PUID=10001
       - PGID=10001
-    env_file:
-      - .env
     develop:
       watch:
         - action: rebuild
