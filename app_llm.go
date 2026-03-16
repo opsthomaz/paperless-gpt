@@ -245,11 +245,11 @@ func (app *App) getSuggestedDocumentType(
 		}
 	}
 
-	// If not found in available types, return empty string
+	// If not found in available types, return as-is so it can be created
 	if response != "" {
-		logger.Warnf("LLM suggested document type '%s' not found in available types, ignoring", response)
+		logger.Infof("LLM suggested document type '%s' not found in available types, will create it", response)
 	}
-	return "", nil
+	return response, nil
 }
 
 // getSuggestedTitle generates a suggested title for a document using the LLM
