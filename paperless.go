@@ -706,8 +706,11 @@ func (client *PaperlessClient) UpdateDocuments(ctx context.Context, documents []
 			if docTypeID, exists := availableDocumentTypes[document.SuggestedDocumentType]; exists {
 				updatedFields["document_type"] = docTypeID
 			} else {
-				// Unlike correspondents, we don't create new document types - only use existing ones
-				log.Warnf("Document type '%s' not found in available types, skipping for document %d", document.SuggestedDocumentType, documentID)
+				newDocTypeID, err := client.CreateOrGetDocumentType(ctx, document.SuggestedDocumentType)
+				if err != nil {
+					return fmt.Errorf("error creating document type '%s': %w", document.SuggestedDocumentType, err)
+				}
+				updatedFields["document_type"] = newDocTypeID
 			}
 		}
 
@@ -727,7 +730,7 @@ func (client *PaperlessClient) UpdateDocuments(ctx context.Context, documents []
 			// Validate format YYYY-MM-DD
 			if matched := regexp.MustCompile(`^\d{4}-\d{2}-\d{2}$`).MatchString(suggestedCreatedDate); matched {
 				originalFields["created_date"] = document.OriginalDocument.CreatedDate
-				updatedFields["created_date"] = suggestedCreatedDate
+				updatedFields["created"] = suggestedCreatedDate
 			} else {
 				log.Warnf("Invalid created_date format for document %d: %s. Expected YYYY-MM-DD, skipping.", documentID, suggestedCreatedDate)
 			}
@@ -1409,6 +1412,53 @@ func (client *PaperlessClient) GetAllCorrespondents(ctx context.Context) (map[st
 	}
 
 	return correspondentIDMapping, nil
+}
+
+// CreateOrGetDocumentType creates a new document type or returns existing one if name already exists
+func (client *PaperlessClient) CreateOrGetDocumentType(ctx context.Context, name string) (int, error) {
+	documentTypes, err := client.GetAllDocumentTypes(ctx)
+	if err != nil {
+		return 0, fmt.Errorf("error fetching document types: %w", err)
+	}
+
+	for _, dt := range documentTypes {
+		if strings.EqualFold(dt.Name, name) {
+			log.Infof("Using existing document type with name %s and ID %d", dt.Name, dt.ID)
+			return dt.ID, nil
+		}
+	}
+
+	url := "api/document_types/"
+	jsonData, err := json.Marshal(map[string]interface{}{
+		"name":               name,
+		"matching_algorithm": 1,
+		"match":              "",
+		"is_insensitive":     true,
+	})
+	if err != nil {
+		return 0, err
+	}
+
+	resp, err := client.Do(ctx, "POST", url, bytes.NewBuffer(jsonData))
+	if err != nil {
+		return 0, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusCreated {
+		bodyBytes, _ := io.ReadAll(resp.Body)
+		return 0, fmt.Errorf("error creating document type: %d, %s", resp.StatusCode, string(bodyBytes))
+	}
+
+	var created struct {
+		ID int `json:"id"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&created); err != nil {
+		return 0, err
+	}
+
+	log.Infof("Created new document type '%s' with ID %d", name, created.ID)
+	return created.ID, nil
 }
 
 // GetAllDocumentTypes retrieves all document types from the Paperless-NGX API

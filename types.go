@@ -26,8 +26,7 @@ type GetDocumentApiResponseResult struct {
 	Title   string `json:"title"`
 	Content string `json:"content"`
 	Tags    []int  `json:"tags"`
-	// Created             time.Time     `json:"created"`
-	CreatedDate string `json:"created_date"`
+	CreatedDate string `json:"created"`
 	// Modified            time.Time     `json:"modified"`
 	// Added               time.Time     `json:"added"`
 	// ArchiveSerialNumber interface{}   `json:"archive_serial_number"`
@@ -67,7 +66,7 @@ type GetDocumentApiResponse struct {
 	Title            string                `json:"title"`
 	Content          string                `json:"content"`
 	Tags             []int                 `json:"tags"`
-	CreatedDate      string                `json:"created_date"`
+	CreatedDate      string                `json:"created"`
 	OriginalFileName string                `json:"original_file_name"`
 	Notes            []interface{}         `json:"notes"`
 	CustomFields     []CustomFieldResponse `json:"custom_fields"`
